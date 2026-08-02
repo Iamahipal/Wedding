@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "film",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "verify-devanagari",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs", "scripts/.verify", "4321"],
+      "port": 4321
+    },
+    {
+      "name": "export",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve.mjs", "out", "4322"],
+      "port": 4322
+    }
+  ]
+}

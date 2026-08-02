@@ -1,0 +1,47 @@
+{
+  "_readme": [
+    "Every Devanagari string that appears anywhere in the film. The build script",
+    "(npm run devanagari) shapes each one with HarfBuzz and commits the outlines",
+    "to public/dev/<key>.svg. Nothing here is rendered with a webfont at runtime.",
+    "",
+    "IF YOU CHANGE A STRING HERE YOU MUST RE-RUN `npm run devanagari`.",
+    "Keys beginning with _ are ignored by the build script."
+  ],
+
+  "invocation": "ॐ गं गणपतये नमः",
+
+  "actShunya": "शून्य",
+  "actAkasha": "आकाश",
+  "actVayu": "वायु",
+  "actAgni": "अग्नि",
+  "actJal": "जल",
+  "actPrithvi": "पृथ्वी",
+  "actGathbandhan": "गठबंधन",
+
+  "muhurat": "शुभ मुहूर्त",
+  "saptapadi": "सप्तपदी",
+
+  "step1": "अन्न",
+  "step2": "बल",
+  "step3": "धन",
+  "step4": "सुख",
+  "step5": "प्रजा",
+  "step6": "ऋतु",
+  "step7": "सख्य",
+
+  "num1": "१",
+  "num2": "२",
+  "num3": "३",
+  "num4": "४",
+  "num5": "५",
+  "num6": "६",
+  "num7": "७",
+
+  "panchMahabhuta": "पञ्च महाभूत",
+  "vivah": "विवाह",
+  "mandap": "मण्डप",
+  "varmala": "वरमाला",
+
+  "brideName": "अनन्या",
+  "groomName": "अर्जुन"
+}

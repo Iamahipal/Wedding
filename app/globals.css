@@ -1,0 +1,147 @@
+@import 'tailwindcss';
+
+/* ─────────────────────────────────────────────────────────────── theme ─────
+   Black and gold. No navy, no blue cast anywhere.
+
+   The void is a *warm* black. Flat #000 gives the tone mapper nothing at the
+   edges and the corners read as dead patches rather than as space.
+
+   Gold spans the full range — near-black brown in shadow through saturated
+   orange in the mid-tones to cream in the highlights. Roughly half of any gold
+   surface should be sitting in the bottom third of this ramp. That is what
+   makes metal look like metal.
+   ------------------------------------------------------------------------- */
+@theme {
+  --color-void: #050301;
+  --color-void-2: #0b0703;
+  --color-ink: #120c05;
+
+  --color-gold-50: #fdf4de;
+  --color-gold-100: #f7e3b3;
+  --color-gold-200: #ecca80;
+  --color-gold-300: #dcac52;
+  --color-gold-400: #c48b31;
+  --color-gold-500: #a46d20;
+  --color-gold-600: #7e5015;
+  --color-gold-700: #58360e;
+  --color-gold-800: #351f08;
+  --color-gold-900: #1b0f04;
+
+  /* the near-neutral white that separates one form from another.
+     cool *relative to the gold*, without dragging the frame toward navy. */
+  --color-rim: #fbf7ef;
+
+  --font-serif: 'Cormorant Garamond', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-ui:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ──────────────────────────────────────────────────────────────── base ───── */
+
+html {
+  background-color: var(--color-void);
+  color: var(--color-gold-100);
+  -webkit-text-size-adjust: 100%;
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  font-family: var(--font-serif);
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+  margin: 0;
+  /* the backdrop does the corner falloff, gently.
+     TRAP 13 — no vignette anywhere. A vignette crushes all four corners and
+     reads as four dark patches rather than as space. */
+  background:
+    radial-gradient(120% 90% at 50% 40%, #100a04 0%, #070402 55%, var(--color-void) 100%);
+}
+
+::selection {
+  background: var(--color-gold-600);
+  color: var(--color-gold-50);
+}
+
+/* the one canvas. fixed, behind everything, mounted once, never unmounted. */
+#stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+#stage canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ───────────────────────────────────────────────────────────── reveals ─────
+   TRAP 15. Anything that animates in from nothing starts hidden in CSS, not
+   only in the GSAP timeline. Between first paint and hydration there is no
+   GSAP at all, and un-animated elements flash at full opacity first.
+   ------------------------------------------------------------------------- */
+[data-reveal] {
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+/* The curtain that covers every act boundary. Written to directly each frame
+   from inside the render loop — never through React state. */
+#curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  opacity: 0;
+  pointer-events: none;
+  background: #000;
+}
+
+.caption-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+
+/* small caps-ish label used for romanised names and UI */
+.eyebrow {
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.34em;
+  font-size: clamp(0.55rem, 1.6vw, 0.72rem);
+  font-weight: 500;
+  color: color-mix(in oklab, var(--color-gold-200) 78%, transparent);
+}
+
+.rule {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in oklab, var(--color-gold-400) 70%, transparent),
+    transparent
+  );
+}
+
+/* ────────────────────────────────────────────────── reduced motion ─────────
+   TRAP 22. This is a first-class branch, not a switch that freezes things.
+   The camera moves are skipped; the content is still *presented*. A path that
+   leaves the title as an unreadable speck in deep space animates less while
+   communicating nothing.
+   ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  [data-reveal] {
+    opacity: 1;
+  }
+  [data-motion-only] {
+    display: none;
+  }
+}
