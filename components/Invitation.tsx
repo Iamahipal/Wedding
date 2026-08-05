@@ -179,7 +179,7 @@ export default function Invitation() {
       </div>
 
       {USING_PLACEHOLDERS && (
-        <div className="pointer-events-none fixed bottom-3 left-3 z-40 rounded-sm border border-gold-700/60 bg-void/85 px-3 py-1.5 font-[family-name:var(--font-ui)] text-[0.6rem] uppercase tracking-[0.18em] text-gold-400/90 backdrop-blur-sm">
+        <div className="chrome pointer-events-none fixed bottom-3 left-3 z-40 rounded-sm border border-gold-700/60 bg-void/85 px-3 py-1.5 font-[family-name:var(--font-ui)] text-[0.6rem] uppercase tracking-[0.18em] text-gold-400/90 backdrop-blur-sm">
           Placeholder copy — see lib/content.ts
         </div>
       )}

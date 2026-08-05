@@ -330,6 +330,19 @@ export default function Film() {
         },
       }
 
+      /* ── the chrome arrives a beat late ──────────────────────────────────
+       * The opening is meant to be nothing at all, and it is not nothing if
+       * the sound control and the placeholder badge are already sitting on it.
+       * They fade up on a timer, or the moment the viewer scrolls — whichever
+       * happens first, so the control is always on screen well before the film
+       * is capable of making a sound.
+       * ------------------------------------------------------------------- */
+      const showChrome = () => {
+        document.documentElement.dataset.chrome = 'ready'
+      }
+      const chromeTimer = window.setTimeout(showChrome, reduced ? 0 : 1800)
+      window.addEventListener('scroll', showChrome, { once: true, passive: true })
+
       // read by components/Diag.tsx — proves the effect reached the end rather
       // than throwing somewhere in the middle and leaving a half-built film
       const w = window as unknown as Record<string, unknown>
@@ -346,6 +359,8 @@ export default function Film() {
       return () => {
         if (tick) gsap.ticker.remove(tick)
         lenis?.destroy()
+        window.clearTimeout(chromeTimer)
+        window.removeEventListener('scroll', showChrome)
       }
     })
 

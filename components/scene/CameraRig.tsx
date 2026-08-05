@@ -4,11 +4,18 @@ import { useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
-import { film, shotFor, HERO_P, type ActName } from '@/lib/film'
+import { cameraBreath, film, shotFor, HERO_P, type ActName } from '@/lib/film'
 import { damp } from '@/lib/math'
 
 const pos = new THREE.Vector3()
 const target = new THREE.Vector3()
+/**
+ * The damped position of the *authored* shot, kept apart from what the camera
+ * is finally set to. Breath is added on the way out and never fed back in — add
+ * it to cam.position directly and the next frame damps from the breathed value,
+ * so the drift integrates into a slow wander that never returns to the shot.
+ */
+const base = new THREE.Vector3()
 
 /**
  * The camera has mass.
@@ -47,17 +54,33 @@ export default function CameraRig() {
     target.set(shot.tx, shot.ty, shot.tz)
 
     if (cut || film.reducedMotion) {
-      cam.position.copy(pos)
+      base.copy(pos)
     } else {
       const k = 9
-      cam.position.x = damp(cam.position.x, pos.x, k, dt)
-      cam.position.y = damp(cam.position.y, pos.y, k, dt)
-      cam.position.z = damp(cam.position.z, pos.z, k, dt)
+      base.x = damp(base.x, pos.x, k, dt)
+      base.y = damp(base.y, pos.y, k, dt)
+      base.z = damp(base.z, pos.z, k, dt)
+    }
+
+    cam.position.copy(base)
+    let roll = shot.roll
+
+    // The breath. It runs on time rather than on scroll, so the shot stays
+    // alive while the viewer is holding still and reading — which is most of
+    // the time they spend in any given act.
+    if (!film.reducedMotion) {
+      const b = cameraBreath(act, film.time, base.distanceTo(target))
+      cam.position.x += b.px
+      cam.position.y += b.py
+      cam.position.z += b.pz
+      target.x += b.tx
+      target.y += b.ty
+      roll += b.roll
     }
 
     cam.up.set(0, 1, 0)
     cam.lookAt(target)
-    if (shot.roll !== 0) cam.rotateZ(shot.roll)
+    if (roll !== 0) cam.rotateZ(roll)
 
     if (Math.abs(cam.fov - shot.fov) > 0.001) {
       cam.fov = cut ? shot.fov : damp(cam.fov, shot.fov, 6, dt)

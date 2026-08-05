@@ -194,8 +194,28 @@ function Mantra() {
     const cam = camera as THREE.PerspectiveCamera
     const shot = prologueMantra(p, worldWidth, cam.fov, film.aspect, film.portrait)
 
-    g.position.set(0, 0, cam.position.z - shot.distance)
-    g.rotation.set(0, film.reducedMotion ? 0 : shot.yaw, 0)
+    /**
+     * The approach is scroll-driven, but the mantra also has to be alive while
+     * the viewer is holding still and actually reading it — otherwise the one
+     * shot the whole film opens on is a frozen image.
+     *
+     * The float is scaled by apparent size: barely there while it is a distant
+     * speck, fullest once it fills the frame, and it never fights the approach
+     * because it is an order of magnitude smaller than it.
+     */
+    const t = film.reducedMotion ? 0 : film.time
+    const life = shot.fraction
+
+    g.position.set(
+      Math.sin(t * 0.21) * 0.024 * life,
+      Math.sin(t * 0.17 + 1.9) * 0.02 * life,
+      cam.position.z - shot.distance,
+    )
+    g.rotation.set(
+      Math.sin(t * 0.13 + 0.7) * 0.012 * life,
+      (film.reducedMotion ? 0 : shot.yaw) + Math.sin(t * 0.11) * 0.016 * life,
+      Math.sin(t * 0.19 + 2.3) * 0.008 * life,
+    )
 
     // TRAP 11 — glow is a function of apparent size, not of scroll progress.
     // A speck needs to burn; a legible form needs to stop burning and be metal,

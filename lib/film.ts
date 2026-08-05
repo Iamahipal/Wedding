@@ -458,6 +458,68 @@ const REDUCED_CONTENT: Record<ActName, readonly [number, number]> = {
   gathbandhan: [0.3, 1.0], // the rings interlock
 }
 
+/* ── breath ──────────────────────────────────────────────────────────────────
+ * Scroll drives the narrative. Time drives the *life*.
+ *
+ * Every shot in this film was authored purely as a function of scroll progress,
+ * which means that the instant the viewer stops scrolling the camera becomes
+ * perfectly, mechanically still — and a perfectly still camera is the single
+ * most deadening thing in a piece that is otherwise trying to feel photographed.
+ * No real camera is ever that still. Even locked off on a tripod it breathes.
+ *
+ * So a small, slow, never-repeating drift is added on top of the authored shot.
+ * It is deliberately *not* a scroll effect: it keeps running when nothing else
+ * is, which is the whole point. The amplitude scales with the shot's distance
+ * so it reads identically whether the camera is nine units from a kalash or
+ * thirty-four from a starfield.
+ *
+ * Jal gets the least of it. Its stillness is the effect.
+ * -------------------------------------------------------------------------- */
+export const BREATH: Record<ActName, number> = {
+  shunya: 0.75,
+  akasha: 1.0,
+  vayu: 1.15,
+  agni: 1.3, // hot air, and the circling is already restless
+  jal: 0.4, // almost nothing — the contrast with Agni *is* the act
+  prithvi: 0.85,
+  gathbandhan: 0.8,
+}
+
+export interface Breath {
+  px: number
+  py: number
+  pz: number
+  tx: number
+  ty: number
+  roll: number
+}
+
+const breath: Breath = { px: 0, py: 0, pz: 0, tx: 0, ty: 0, roll: 0 }
+
+/**
+ * Frequencies are mutually irrational so the pattern never visibly loops — three
+ * sines at 1:1.42:0.68 take minutes to come back into phase, and by then nobody
+ * is still looking at the same act.
+ */
+export function cameraBreath(act: ActName, time: number, distance: number): Breath {
+  const k = BREATH[act] * Math.max(distance, 1)
+  const a = k * 0.0038
+  const b = k * 0.0021
+
+  breath.px = Math.sin(time * 0.19) * a
+  breath.py = Math.sin(time * 0.27 + 1.7) * a * 0.8
+  breath.pz = Math.sin(time * 0.13 + 3.1) * a * 0.6
+
+  // the target drifts on its own clock, which is what turns a translation into
+  // a slow, unrepeatable re-aim rather than a rigid slide
+  breath.tx = Math.sin(time * 0.23 + 0.6) * b
+  breath.ty = Math.sin(time * 0.17 + 2.4) * b
+
+  breath.roll = Math.sin(time * 0.09 + 1.1) * BREATH[act] * 0.0045
+
+  return breath
+}
+
 /** Per-act camera. Returns a shared scratch object — do not retain it. */
 export function shotFor(act: ActName, p: number, state: FilmState): Shot {
   const [sx, sy, sz] = STATION[act]

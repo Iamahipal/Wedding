@@ -409,6 +409,32 @@ body {
   will-change: opacity, transform;
 }
 
+/* ────────────────────────────────────────────────────────────── chrome ─────
+   The film opens on nothing. "Black, held longer than is comfortable" cannot
+   be held while a sound button and a placeholder badge sit on top of it — the
+   first frame has to actually be the first frame.
+
+   So the UI arrives a beat late: on a timer, or the instant the viewer scrolls,
+   whichever comes first.
+
+   This is in tension with TRAP 23 — show the sound control before the page can
+   make any noise — and it resolves rather than breaks it. The earliest sound
+   beat is a third of the way into Shunya, which is most of a screen-height of
+   scrolling away; the control is on screen long before then, and the very act
+   of scrolling reveals it. Nothing can make a sound while it is still hidden.
+   ------------------------------------------------------------------------- */
+.chrome {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1200ms cubic-bezier(0.16, 0.84, 0.28, 1);
+}
+html[data-chrome='ready'] .chrome {
+  opacity: 1;
+}
+html[data-chrome='ready'] button.chrome {
+  pointer-events: auto;
+}
+
 /* The curtain that covers every act boundary. Written to directly each frame
    from inside the render loop — never through React state. */
 #curtain {

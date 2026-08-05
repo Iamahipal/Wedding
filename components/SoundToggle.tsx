@@ -63,7 +63,7 @@ export default function SoundToggle() {
       onClick={toggle}
       aria-pressed={on}
       aria-label={on ? 'Turn sound off' : 'Turn sound on'}
-      className="group fixed right-4 top-4 z-40 flex items-center gap-2.5 rounded-full border border-gold-700/60 bg-void/70 px-4 py-2 font-[family-name:var(--font-ui)] text-[0.6rem] uppercase tracking-[0.2em] text-gold-300/90 backdrop-blur-sm transition-colors duration-500 hover:border-gold-400/80 hover:text-gold-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-300 sm:right-6 sm:top-6"
+      className="chrome group fixed right-4 top-4 z-40 flex items-center gap-2.5 rounded-full border border-gold-700/60 bg-void/70 px-4 py-2 font-[family-name:var(--font-ui)] text-[0.6rem] uppercase tracking-[0.2em] text-gold-300/90 backdrop-blur-sm transition-colors duration-500 hover:border-gold-400/80 hover:text-gold-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-300 sm:right-6 sm:top-6"
     >
       <span aria-hidden="true" className="flex h-3 items-end gap-[2px]">
         {[0.45, 1, 0.7].map((h, i) => (
