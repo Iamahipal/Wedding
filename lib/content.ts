@@ -22,14 +22,14 @@ export const DEV = devanagari as unknown as Record<string, string>
 
 export const couple = {
   bride: {
-    name: 'Ananya', // «PLACEHOLDER»
+    name: 'Niharika',
     devanagariKey: 'brideName',
     /** Birth nakshatra — drives which star aligns in Akasha. 0..26 */
     nakshatra: 16, // «PLACEHOLDER» Anuradha
     parents: 'daughter of Mr. & Mrs. Placeholder Sharma', // «PLACEHOLDER»
   },
   groom: {
-    name: 'Arjun', // «PLACEHOLDER»
+    name: 'Mahipal',
     devanagariKey: 'groomName',
     nakshatra: 4, // «PLACEHOLDER» Mrigashira
     parents: 'son of Mr. & Mrs. Placeholder Verma', // «PLACEHOLDER»
@@ -228,7 +228,7 @@ export const travel = {
 }
 
 export const site = {
-  title: 'Ananya & Arjun', // «PLACEHOLDER»
+  title: 'Niharika & Mahipal',
   description:
     'A wedding invitation told through the five great elements — शून्य, आकाश, वायु, अग्नि, जल, पृथ्वी.',
   closingKey: 'panchMahabhuta',
