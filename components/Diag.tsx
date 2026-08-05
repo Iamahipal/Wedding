@@ -5,6 +5,31 @@ import { useEffect, useState } from 'react'
 import { film } from '@/lib/film'
 
 /**
+ * Error capture, installed at *module* scope — it runs the moment the bundle
+ * evaluates, well before React renders anything, so it catches the throws that
+ * matter: three.js, GSAP, shader compilation.
+ *
+ * The obvious alternative — an inline <script> in the layout — does not work.
+ * React refuses to execute script tags rendered by a component, and placing one
+ * between <html> and <body> is invalid HTML that React reports as a hydration
+ * error on every load. A diagnostic that breaks the page it was added to
+ * diagnose is worse than no diagnostic at all.
+ */
+if (typeof window !== 'undefined') {
+  const w = window as unknown as Record<string, unknown>
+  if (!w.__errs) {
+    const errs: string[] = []
+    w.__errs = errs
+    window.addEventListener('error', (e) => {
+      errs.push(`${e.message || e.type} @ ${(e.filename || '?').split('/').pop()}:${e.lineno || 0}`)
+    })
+    window.addEventListener('unhandledrejection', (e) => {
+      errs.push(`promise: ${(e.reason && e.reason.message) || e.reason}`)
+    })
+  }
+}
+
+/**
  * On-screen diagnostics, behind `?diag`.
  *
  * A phone has no console attached, and "nothing is happening" is a symptom with

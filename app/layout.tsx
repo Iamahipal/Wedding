@@ -26,17 +26,6 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      {/* Captures anything that throws before — or instead of — hydration, so
-          `?diag` can report it on a device with no console attached. Inline and
-          dependency-free on purpose: it has to run before the bundle does. */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html:
-            'window.__errs=[];' +
-            "addEventListener('error',function(e){window.__errs.push((e.message||e.type)+' @ '+(e.filename||'?').split('/').pop()+':'+(e.lineno||0))});" +
-            "addEventListener('unhandledrejection',function(e){window.__errs.push('promise: '+((e.reason&&e.reason.message)||e.reason))});",
-        }}
-      />
       <body className="antialiased">
         {/* The one canvas. Mounted here, once, and never unmounted. */}
         <StageMount />

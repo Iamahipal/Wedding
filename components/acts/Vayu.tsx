@@ -4,9 +4,11 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
+import { REGION_OF, type Region } from '@/lib/content'
 import { film, STATION } from '@/lib/film'
-import { lerp, mulberry32, smootherstep, smoothstep, visibleHeightAt, visibleWidthAt } from '@/lib/math'
+import { clamp01, lerp, mulberry32, smootherstep, smoothstep, visibleHeightAt, visibleWidthAt } from '@/lib/math'
 import { curlNoise, simplex3d, windField } from '@/lib/shaders/noise'
+import { patterns } from '@/lib/shaders/patterns'
 
 /* ── वायु — air ──────────────────────────────────────────────────────────────
  *
@@ -25,8 +27,23 @@ const STATION_Z = STATION.vayu[2]
 
 /* ── the chunni ───────────────────────────────────────────────────────────── */
 
-function Chunni() {
+/**
+ * Two cloths, one wind.
+ *
+ * A Rajasthani odhni in leheriya and bandhani, and a Banarasi brocade — the two
+ * households, sharing the same air. They sample the identical curl field, which
+ * is the whole point: two separately tuned winds would have read as two things
+ * happening near each other rather than as one moving body of air.
+ *
+ * Both patterns are woven procedurally in the fragment shader and act on
+ * *roughness* as much as colour. Real leheriya is dyed into the silk and real
+ * zari is metal thread lying on top of it — a pattern painted only into the
+ * base colour reads as printed cloth, and the difference is entirely in how the
+ * light comes back off it.
+ */
+function Chunni({ variant, phase, side }: { variant: Region; phase: number; side: -1 | 1 }) {
   const mesh = useRef<THREE.Mesh>(null)
+  const raj = variant === 'rajasthan'
 
   const material = useMemo(() => {
     const m = new THREE.MeshPhysicalMaterial({
@@ -36,11 +53,13 @@ function Chunni() {
       // The fix is to keep the body genuinely dark and let only the folds catch
       // light — roughly half of any surface in this film should be dark, and
       // fabric is no exception.
-      color: new THREE.Color('#5e1806'),
-      metalness: 0.5,
+      // Rajasthani ground runs hotter and more saffron; Banarasi ground is the
+      // deeper, bluer-free crimson that zari is traditionally laid on.
+      color: new THREE.Color(raj ? '#6b1c05' : '#4d1208'),
+      metalness: raj ? 0.42 : 0.58, // more zari in the Banarasi weave
       roughness: 0.4,
       sheen: 0.65,
-      sheenColor: new THREE.Color('#d98a2e'),
+      sheenColor: new THREE.Color(raj ? '#e09a33' : '#d0842c'),
       sheenRoughness: 0.42,
       envMapIntensity: 0.8,
       side: THREE.DoubleSide,
@@ -52,6 +71,9 @@ function Chunni() {
       uWindAmp: { value: 0.055 },
       uWindDir: { value: new THREE.Vector3(0.35, 0.16, 0) },
       uBillow: { value: 1 },
+      uRegion: { value: raj ? 0 : 1 },
+      uZari: { value: new THREE.Color('#f0c469') },
+      uResist: { value: new THREE.Color('#f7e6bd') },
     }
 
     m.onBeforeCompile = (shader) => {
@@ -65,6 +87,9 @@ function Chunni() {
            ${curlNoise}
            ${windField}
            uniform float uBillow;
+           // our own uv varying: three only declares vClothUv when a texture map
+           // is actually bound, and this material has none
+           varying vec2 vClothUv;
 
            vec3 clothAt(vec3 p, vec2 uvIn) {
              // anchored along the lower edge and freest at the top, which is
@@ -89,11 +114,50 @@ function Chunni() {
              vec3 objectTangent = vec3(tangent.xyz);
            #endif`,
         )
-        .replace('#include <begin_vertex>', 'vec3 transformed = _p0;')
+        .replace('#include <begin_vertex>', 'vec3 transformed = _p0;\n vClothUv = uv;')
+
+      /* ── the weave ───────────────────────────────────────────────────────
+       * Pattern applied to colour *and* roughness. Zari is metal thread: it is
+       * smoother than the silk around it, so it catches the rig at a different
+       * angle from the ground it sits on. Take that away and the brocade
+       * flattens into wallpaper no matter how good the colours are.
+       * ------------------------------------------------------------------ */
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>
+           ${patterns}
+           uniform float uRegion;   // 0 = Rajasthan, 1 = Awadh
+           uniform vec3  uZari;
+           uniform vec3  uResist;
+           varying vec2  vClothUv;`,
+        )
+        .replace(
+          '#include <roughnessmap_fragment>',
+          `#include <roughnessmap_fragment>
+           float _pat;
+           vec3  _patCol;
+           if (uRegion < 0.5) {
+             float lh = leheriya(vClothUv, 11.0, 0.9);
+             float bh = bandhani(vClothUv, 26.0);
+             // the tied dots sit *inside* the dyed bands, never across them
+             _pat = max(bh * lh, 0.0);
+             _patCol = mix(diffuseColor.rgb, uResist, bh * 0.85);
+             _patCol = mix(_patCol, _patCol * 1.55, lh * 0.5);
+             roughnessFactor = mix(roughnessFactor, roughnessFactor * 1.25, bh);
+           } else {
+             float bt = butti(vClothUv, 7.0);
+             _pat = bt;
+             _patCol = mix(diffuseColor.rgb, uZari, bt * 0.9);
+             // metal thread is smoother than the silk carrying it
+             roughnessFactor = mix(roughnessFactor, 0.16, bt * 0.85);
+           }
+           diffuseColor.rgb = _patCol;`,
+        )
     }
 
     return m
-  }, [])
+  }, [raj])
 
   const geometry = useMemo(() => {
     const seg = film.lowEnd ? 40 : 72
@@ -118,9 +182,12 @@ function Chunni() {
      * TRAP 9: it is sized from the viewport at its actual distance, not given a
      * world width. "Fills the frame" has to mean fills *this* frame.
      */
-    const away = smootherstep(0.02, 0.58, p)
-    const lift = smootherstep(0.6, 1, p)
-    const dist = lerp(1.25, 15, away)
+    // The two cloths run the same curve, offset — one is already pulling away
+    // as the other arrives, so they cross rather than move as a pair.
+    const q = clamp01(p + phase)
+    const away = smootherstep(0.02, 0.58, q)
+    const lift = smootherstep(0.6, 1, q)
+    const dist = lerp(1.25, 15, away) + (side > 0 ? 2.4 : 0)
 
     const w = visibleWidthAt(dist, film.fov, film.aspect)
     const h = visibleHeightAt(dist, film.fov)
@@ -133,11 +200,15 @@ function Chunni() {
 
     const camLocalZ = camera.position.z - STATION_Z
     g.position.set(
-      lerp(0.12, -0.42, away) * w,
+      lerp(0.12, -0.42, away) * w * side,
       lerp(-0.08, 0.35, away) * h + lift * h * 2.1,
       camLocalZ - dist,
     )
-    g.rotation.set(lerp(0.18, -0.32, away), lerp(-0.55, 0.3, away), lerp(0.14, -0.3, away) - lift * 0.5)
+    g.rotation.set(
+      lerp(0.18, -0.32, away),
+      lerp(-0.55, 0.3, away) * side,
+      (lerp(0.14, -0.3, away) - lift * 0.5) * side,
+    )
   })
 
   return <mesh ref={mesh} geometry={geometry} material={material} frustumCulled={false} />
@@ -302,7 +373,9 @@ function Petals() {
 export default function Vayu() {
   return (
     <>
-      <Chunni />
+      {/* the groom's household leads in, the bride's follows and crosses it */}
+      <Chunni variant={REGION_OF.groom} phase={0} side={-1} />
+      <Chunni variant={REGION_OF.bride} phase={-0.16} side={1} />
       <Petals />
     </>
   )

@@ -16,6 +16,24 @@ import devanagari from '../content/devanagari.json'
 /** Flip to false once real copy has replaced every «PLACEHOLDER» below. */
 export const USING_PLACEHOLDERS = true
 
+/**
+ * The two households.
+ *
+ * The Panch Mahabhuta structure is pan-Vedic and carries the film; the regions
+ * are its *surface* — ornament, textile and architecture, never a separate act.
+ * Each vocabulary stays distinct through the film and the two resolve into one
+ * at गठबंधन, which is the wedding stated in material rather than in words.
+ *
+ * Swap these two values to swap which side carries which tradition. Nothing
+ * else in the codebase hard-codes it.
+ */
+export type Region = 'rajasthan' | 'awadh'
+
+export const REGION_OF = {
+  bride: 'awadh', // Banarasi brocade, Awadhi multifoil arches, deep-daan
+  groom: 'rajasthan', // leheriya and bandhani, jaali and jharokha, the baori
+} as const satisfies Record<'bride' | 'groom', Region>
+
 export const DEV = devanagari as unknown as Record<string, string>
 
 /* ─────────────────────────────────────────────────────────── the couple ───── */
