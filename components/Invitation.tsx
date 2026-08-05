@@ -1,4 +1,5 @@
 import Devanagari from './Devanagari'
+import Folio from './Folio'
 import { couple, events, invitation, rsvp, site, travel, USING_PLACEHOLDERS } from '@/lib/content'
 
 /**
@@ -59,43 +60,60 @@ export default function Invitation() {
 
         <Rule />
 
-        {/* ── the events ────────────────────────────────────────────────── */}
-        <h2 data-reveal className="eyebrow mb-12">
+        {/* ── the celebrations, in the folio ────────────────────────────── */}
+        <h2 data-reveal className="eyebrow mb-4">
           The celebrations
         </h2>
+        <p data-reveal className="mb-2 text-[0.85rem] font-light text-gold-100/45">
+          Open the card, and take out a day.
+        </p>
 
-        <ul className="space-y-px text-left">
-          {events.map((e) => (
-            <li
-              key={e.key}
-              data-reveal
-              className="grid gap-x-8 gap-y-2 border-t border-gold-800/60 py-8 sm:grid-cols-[10rem_1fr]"
-            >
-              <div>
-                <div className="flex items-baseline gap-3">
-                  <h3 className="text-[1.5rem] font-light leading-none text-gold-200">{e.name}</h3>
+        {/* The reveal wrapper sits *above* .folio-stage, which is where the
+            perspective is established — so its opacity and will-change cannot
+            flatten the 3D scene inside it. Putting data-reveal any lower would. */}
+        <div data-reveal>
+        <Folio
+          label="The celebrations"
+          count={events.length}
+          invocationKey="invocation"
+          frontKey="vivah"
+          items={events.map((e) => ({
+            id: e.key,
+            label: e.name,
+            content: (
+              <div className="px-5 py-6 text-void">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h3 className="text-[1.35rem] font-light leading-none text-[#2a1806]">{e.name}</h3>
                   {e.devanagariKey && (
-                    <span className="text-gold-400/80">
-                      <Devanagari name={e.devanagariKey} height="1rem" />
+                    <span className="text-[#6b4a16]">
+                      <Devanagari name={e.devanagariKey} height="0.9rem" />
                     </span>
                   )}
                 </div>
-                <p className="mt-2 font-[family-name:var(--font-ui)] text-[0.7rem] uppercase tracking-[0.2em] text-gold-500">
+
+                <div className="my-4 h-px w-full bg-[#2a1806]/20" />
+
+                <p className="font-[family-name:var(--font-ui)] text-[0.6rem] uppercase tracking-[0.2em] text-[#7a5a22]">
                   {e.time}
                 </p>
-              </div>
-              <div className="font-light text-gold-100/75">
-                <p className="text-gold-100/90">{e.date}</p>
-                <p className="mt-1">{e.venue}</p>
-                <p className="mt-1 text-[0.92rem] text-gold-100/55">{e.address}</p>
+                <p className="mt-3 text-[0.95rem] font-light leading-snug text-[#3a2409]">
+                  {e.date}
+                </p>
+                <p className="mt-2 text-[0.95rem] font-light leading-snug text-[#3a2409]">
+                  {e.venue}
+                </p>
+                <p className="mt-1 text-[0.82rem] font-light leading-snug text-[#3a2409]/65">
+                  {e.address}
+                </p>
                 {e.dress && (
-                  <p className="mt-3 text-[0.85rem] italic text-gold-300/70">{e.dress}</p>
+                  <p className="mt-4 text-[0.8rem] italic text-[#6b4a16]">{e.dress}</p>
                 )}
-                {e.note && <p className="mt-2 text-[0.85rem] text-gold-300/70">{e.note}</p>}
+                {e.note && <p className="mt-2 text-[0.8rem] text-[#6b4a16]">{e.note}</p>}
               </div>
-            </li>
-          ))}
-        </ul>
+            ),
+          }))}
+        />
+        </div>
 
         <Rule />
 

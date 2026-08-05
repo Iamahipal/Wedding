@@ -50,7 +50,20 @@ html::-webkit-scrollbar {
 
 body {
   font-family: var(--font-serif);
-  overflow-x: hidden;
+  /**
+   * `clip`, not `hidden`, and this is not a nicety.
+   *
+   * `overflow-x: hidden` on the body creates a *scrollport* — the body becomes
+   * a scroll container. On WebKit that can move the document's scrolling
+   * element out from under anything measuring `window.scrollY`, which is
+   * exactly what Lenis and ScrollTrigger do. The result on iOS is a page that
+   * paints its fixed overlay perfectly and then does nothing at all when you
+   * scroll: the playhead never advances, so the film sits on its first frame.
+   *
+   * `overflow-x: clip` suppresses the overflow without creating a scroll
+   * container, so the document stays the scroller.
+   */
+  overflow-x: clip;
   overscroll-behavior-y: none;
   margin: 0;
   /* the backdrop does the corner falloff, gently.
@@ -78,12 +91,320 @@ body {
   height: 100% !important;
 }
 
+/* ─────────────────────────────────────────────────────── the folio ─────────
+   A पत्रिका — the folded invitation. Two doors hinged on the card's outer
+   edges, opening on the invocation, with the events tucked inside a pocket.
+
+   All of it is real 3D DOM rather than WebGL: the text stays crisp, selectable
+   and readable by a screen reader, and the whole thing costs a few KB against
+   the canvas's megabytes. Every number worth tuning is a custom property on
+   `.folio` — the animation is edited there, not hunted for in the component.
+   ------------------------------------------------------------------------- */
+
+/* Registered so they *interpolate*. An unregistered custom property is a
+   string to the transition engine and snaps between values, which would make
+   the foil highlight jump between two static positions instead of travelling
+   with the door as it swings. */
+@property --folio-sheen {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --folio-tilt {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+.folio-stage {
+  /* The perspective lives here, on the parent. Putting it on the card itself
+     would give every child its own vanishing point and the doors would splay
+     rather than hinge. */
+  perspective: 1500px;
+  perspective-origin: 50% 44%;
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0 4rem;
+}
+
+.folio {
+  /* geometry */
+  --folio-w: min(78vw, 22.5rem);
+  --folio-h: calc(var(--folio-w) * 1.19);
+  --door-angle: 118deg;
+  --wall-z: 0px;
+  --item-z: 14px;
+  --pocket-z: 30px;
+  --door-z: 42px;
+  --present-z: 150px;
+  --tuck-scale: 0.58;
+
+  /* motion. Card stock does not oscillate: it swings, decelerates against its
+     own mass and stops. A long tail, and no overshoot anywhere. */
+  --door-ms: 640ms;
+  --item-ms: 760ms;
+  --ease: cubic-bezier(0.16, 0.84, 0.28, 1);
+
+  position: relative;
+  width: var(--folio-w);
+  height: var(--folio-h);
+  transform-style: preserve-3d;
+  transform: rotateX(var(--folio-tilt));
+}
+
+/* Nothing between .folio-stage and the doors may create a flattening context.
+   A single `overflow: hidden`, `filter`, `opacity < 1` or non-normal
+   `mix-blend-mode` anywhere in this chain collapses the entire scene to flat —
+   silently, with no error, everything simply stops being 3D. */
+.folio__wall,
+.folio__pocket,
+.folio__door,
+.folio__face,
+.folio__items {
+  position: absolute;
+  transform-style: preserve-3d;
+}
+
+/* Card stock. Warm near-black — never neutral, or the gold in front of it
+   turns to gunmetal. The noise layer is not decoration: a smooth gradient this
+   dark bands into visible rings on an 8-bit display. */
+.folio-stock {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.045'/%3E%3C/svg%3E"),
+    linear-gradient(155deg, #120c05 0%, #0b0703 48%, #070402 100%);
+}
+
+.folio__wall {
+  inset: 0;
+  transform: translateZ(var(--wall-z));
+  border-radius: 3px;
+  /* light entering the folder as the doors open */
+  box-shadow: inset 0 0 4.5rem rgba(0, 0, 0, 0.85);
+  transition: box-shadow var(--door-ms) var(--ease);
+}
+.folio[data-state='open'] .folio__wall {
+  box-shadow: inset 0 0 3rem rgba(0, 0, 0, 0.4);
+}
+
+.folio__pocket {
+  inset: 46% 0 0 0;
+  transform: translateZ(var(--pocket-z));
+  border-radius: 0 0 3px 3px;
+  box-shadow: 0 -0.6rem 1.4rem rgba(0, 0, 0, 0.55);
+}
+
+/* ── the doors ────────────────────────────────────────────────────────────
+   Hinged on the card's *outer* edges, so each free edge starts at the centre
+   seam and swings out — the eyelets travel from the middle to the extremes,
+   which is the tell that it is a gatefold and not two sliding panels.
+   -------------------------------------------------------------------------- */
+.folio__door {
+  top: 0;
+  width: 50%;
+  height: 100%;
+  transition: transform var(--door-ms) var(--ease);
+  will-change: transform;
+}
+.folio__door--l {
+  left: 0;
+  transform-origin: left center;
+  transform: translateZ(var(--door-z)) rotateY(0deg);
+}
+.folio__door--r {
+  right: 0;
+  transform-origin: right center;
+  transform: translateZ(var(--door-z)) rotateY(0deg);
+}
+.folio[data-state='open'] .folio__door--l {
+  transform: translateZ(var(--door-z)) rotateY(calc(var(--door-angle) * -1));
+}
+.folio[data-state='open'] .folio__door--r {
+  transform: translateZ(var(--door-z)) rotateY(var(--door-angle));
+}
+/* the folder tidies itself and closes behind whatever it just handed you */
+.folio[data-state='presented'] .folio__door {
+  transition-delay: 90ms;
+}
+
+/* A door needs two faces. One-sided panels look like paper with no thickness
+   the instant they rotate past 90°. */
+.folio__face {
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 2px;
+}
+.folio__face--front {
+  transform: translateZ(0.6px);
+  /* the near-neutral rim that separates the card from the warm-black field
+     behind it. Gold-on-gold at this value simply disappears. */
+  box-shadow:
+    inset 0 0 0 1px rgba(251, 247, 239, 0.07),
+    0 1.6rem 3rem rgba(0, 0, 0, 0.55);
+}
+/* The inside of the door is a shade lighter, so the fold reads as a fold.
+   Done with its own gradient rather than `filter: brightness()` — a filter
+   forces the element into its own rendering group, which is a needless risk
+   to take inside a preserve-3d subtree. */
+.folio__face--back {
+  transform: rotateY(180deg) translateZ(0.6px);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E"),
+    linear-gradient(155deg, #1e1408 0%, #150e06 52%, #100a04 100%);
+  box-shadow: inset 0 0 0 1px rgba(251, 247, 239, 0.05);
+}
+
+/* The mark on the front door. A mask rather than a filled shape, so the foil
+   gradient — and its travelling highlight — shows *through* the rosette
+   instead of being pasted flat on top of it. */
+.folio-mark {
+  --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23fff'%3E%3Cpath d='M50 4c6 20 12 30 25 34-13 4-19 14-25 34-6-20-12-30-25-34 13-4 19-14 25-34Z'/%3E%3Cpath d='M4 50c20-6 30-12 34-25 4 13 14 19 34 25-20 6-30 12-34 25-4-13-14-19-34-25Z'/%3E%3Ccircle cx='50' cy='50' r='7'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-image: var(--m);
+  mask-image: var(--m);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* ── gold foil ────────────────────────────────────────────────────────────
+   Roughly half the ramp sits in the bottom third. Every instinct says to
+   brighten it; that is exactly what turns gold into yellow plastic.
+   The highlight position is driven by --folio-sheen, which the door carries
+   with it as it swings.
+   -------------------------------------------------------------------------- */
+.folio-foil {
+  background-image: linear-gradient(
+    104deg,
+    var(--color-gold-800) 0%,
+    var(--color-gold-600) calc(8% + var(--folio-sheen) * 42%),
+    var(--color-gold-200) calc(24% + var(--folio-sheen) * 46%),
+    var(--color-gold-500) calc(46% + var(--folio-sheen) * 44%),
+    var(--color-gold-800) 100%
+  );
+  transition: --folio-sheen var(--door-ms) var(--ease);
+}
+.folio[data-state='open'] .folio-foil,
+.folio[data-state='presented'] .folio-foil {
+  --folio-sheen: 1;
+}
+
+.folio__eyelet {
+  position: absolute;
+  top: 50%;
+  width: 0.52rem;
+  height: 0.52rem;
+  margin-top: -0.26rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, var(--color-gold-300), var(--color-gold-800) 68%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.55),
+    0 0 0.4rem rgba(0, 0, 0, 0.6);
+}
+
+/* ── the inserts ──────────────────────────────────────────────────────────
+   Authored at the size they are *read* at and scaled DOWN when tucked away, so
+   the presented state is scale(1) and pixel-crisp. Doing it the other way —
+   small in the DOM, scaled up to present — hands the reader a blurry card at
+   exactly the moment they are trying to read it.
+   -------------------------------------------------------------------------- */
+.folio__items {
+  inset: 0;
+  pointer-events: none;
+}
+
+.folio__item {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(68vw, 19rem);
+  pointer-events: auto;
+  transform-origin: 50% 100%;
+  transition:
+    transform var(--item-ms) var(--ease),
+    opacity calc(var(--item-ms) * 0.7) var(--ease);
+  will-change: transform;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 2px;
+}
+
+/* tucked: down in the pocket, fanned, small */
+.folio__item {
+  transform: translate(-50%, calc(-50% + var(--tuck-y, 30%))) translateZ(calc(var(--item-z) + var(--item-dz, 0px)))
+    rotate(var(--tuck-rot, 0deg)) scale(var(--tuck-scale));
+  opacity: 0;
+}
+.folio[data-state='open'] .folio__item,
+.folio[data-state='presented'] .folio__item {
+  opacity: 1;
+}
+.folio[data-state='open'] .folio__item {
+  transform: translate(-50%, calc(-50% + var(--open-y, 8%))) translateZ(calc(var(--item-z) + var(--item-dz, 0px)))
+    rotate(var(--tuck-rot, 0deg)) scale(var(--tuck-scale));
+}
+/* presented: forward, upright, full size */
+.folio[data-state='presented'] .folio__item[data-active='true'] {
+  transform: translate(-50%, -50%) translateZ(var(--present-z)) rotate(0deg) scale(1);
+}
+/* the ones you did not pick go back down and out of the way */
+.folio[data-state='presented'] .folio__item[data-active='false'] {
+  opacity: 0;
+  transition-delay: 0ms;
+}
+/* Returning: the doors have to be open again before the insert descends, or it
+   passes straight through them on the way down. */
+.folio[data-state='open'] .folio__item[data-was-active='true'] {
+  transition-delay: 190ms;
+}
+
+.folio-parchment {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.07'/%3E%3C/svg%3E"),
+    linear-gradient(158deg, #fdf4de 0%, #f3e3c0 55%, #e8d3a8 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.4) inset,
+    0 1.2rem 2.4rem rgba(0, 0, 0, 0.5);
+}
+
+/* The trigger that opens a closed folio. A real button, so it is reachable by
+   keyboard and announces itself; it steps aside once the inserts — which are
+   buttons of their own — become reachable. Nesting them would be invalid. */
+.folio__trigger {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.folio:not([data-state='closed']) .folio__trigger {
+  pointer-events: none;
+}
+.folio__trigger:focus-visible {
+  outline: 2px solid var(--color-gold-300);
+  outline-offset: 6px;
+}
+.folio__item:focus-visible {
+  outline: 2px solid var(--color-gold-300);
+  outline-offset: 5px;
+}
+
 /* ───────────────────────────────────────────────────────────── reveals ─────
    TRAP 15. Anything that animates in from nothing starts hidden in CSS, not
    only in the GSAP timeline. Between first paint and hydration there is no
    GSAP at all, and un-animated elements flash at full opacity first.
    ------------------------------------------------------------------------- */
 [data-reveal] {
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+/* The seven vows share one absolutely-positioned stack and are revealed one at
+   a time by Film.tsx. They must start hidden here for the same reason as
+   everything else — and this one bites harder: [data-reveal] failing leaves a
+   blank overlay, but seven un-hidden vows render *on top of each other*, which
+   is not a missing caption but an illegible smear. If the timeline never runs,
+   showing nothing is the correct failure. */
+[data-step] {
   opacity: 0;
   will-change: opacity, transform;
 }
@@ -143,5 +464,21 @@ body {
   }
   [data-motion-only] {
     display: none;
+  }
+
+  /* The folio still opens, still presents, still returns — it just stops
+     swinging. Freezing it shut would animate less while communicating
+     nothing, which is the failure this branch exists to avoid. */
+  .folio {
+    --door-ms: 1ms;
+    --item-ms: 1ms;
+  }
+  .folio__door,
+  .folio__item,
+  .folio__wall {
+    transition-delay: 0ms !important;
+  }
+  .folio {
+    transform: none;
   }
 }

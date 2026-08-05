@@ -6,6 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 
 import { ACT_ORDER, ACT_RANGE, emitBeat, film, updateFilm, type ActName } from '@/lib/film'
+import type { FolioHandle } from './Folio'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -250,6 +251,55 @@ export default function Film() {
         }
       }
 
+      /* ── the folio ───────────────────────────────────────────────────────
+       * The card opens itself as it arrives, and that is the *primary* way it
+       * opens rather than a flourish on top of hover. Half the people who see
+       * this will be on a phone, where `hover` does not exist — a card that
+       * only opens on hover is a card that never opens.
+       *
+       * This is React state being set from a ScrollTrigger, which the film
+       * forbids everywhere else. The rule exists because scroll fires dozens of
+       * times a second; these are onEnter/onLeave callbacks that fire twice per
+       * visit, and the alternative — hand-rolling a state machine into refs to
+       * satisfy a rule about per-frame writes — would buy nothing.
+       * ------------------------------------------------------------------- */
+      const folioStage = document.querySelector<HTMLElement>('[data-folio-stage]')
+      const folio = document.querySelector<HTMLElement & { __folio?: FolioHandle }>('[data-folio]')
+
+      if (folioStage && folio) {
+        ScrollTrigger.create({
+          trigger: folioStage,
+          start: 'top 68%',
+          end: 'bottom 32%',
+          onEnter: () => folio.__folio?.open(),
+          onEnterBack: () => folio.__folio?.open(),
+          // never yank a card shut while the reader is holding one of its
+          // inserts out — closing is only ever a return to `closed` from `open`
+          onLeave: () => folio.__folio?.close(),
+          onLeaveBack: () => folio.__folio?.close(),
+        })
+
+        if (!reduced) {
+          // A slow tilt as it passes, written straight to the element by GSAP.
+          // --folio-tilt is registered with @property, so it interpolates as an
+          // angle instead of snapping between two strings.
+          gsap.fromTo(
+            folio,
+            { '--folio-tilt': '7deg' },
+            {
+              '--folio-tilt': '-5deg',
+              ease: 'none',
+              scrollTrigger: {
+                trigger: folioStage,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: 0.7,
+              },
+            },
+          )
+        }
+      }
+
       /* ── the scrub harness ───────────────────────────────────────────────
        * TRAP 18. A three-second opening cannot be sampled on a wall clock —
        * under a software renderer a screenshot costs longer than a beat, and
@@ -279,6 +329,13 @@ export default function Film() {
           seek(a + (b - a) * p)
         },
       }
+
+      // read by components/Diag.tsx — proves the effect reached the end rather
+      // than throwing somewhere in the middle and leaving a half-built film
+      const w = window as unknown as Record<string, unknown>
+      w.__filmReady = true
+      w.__triggerCount = ScrollTrigger.getAll().length
+      w.__lenis = lenis ? 'lenis' : reduced ? 'native (reduced)' : 'none'
 
       const params = new URLSearchParams(window.location.search)
       const t0 = params.get('t')

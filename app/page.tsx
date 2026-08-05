@@ -1,4 +1,5 @@
 import Curtain from '@/components/Curtain'
+import Diag from '@/components/Diag'
 import FilmChoreography from '@/components/Film'
 import Invitation from '@/components/Invitation'
 import Overlay from '@/components/Overlay'
@@ -22,6 +23,7 @@ export default function Page() {
       <Curtain />
       {/* rendered in the first paint, before the film makes a sound */}
       <SoundToggle />
+      <Diag />
 
       <main className="relative z-10">
         <div data-film aria-hidden="true">

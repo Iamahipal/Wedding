@@ -241,6 +241,13 @@ export class Sound {
       case 'knot':
         this.bell(1, 196)
         break
+      // the folio: paper, not ceremony — quieter than anything in the film
+      case 'folio':
+        this.shimmer(0.3)
+        break
+      case 'folio-take':
+        this.bell(0.28, 392)
+        break
     }
   }
 }

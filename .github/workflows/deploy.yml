@@ -1,0 +1,63 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a queued run supersedes the one before it.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Emits base_path — "/<repo>" for a project page, "" for a user page.
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      # TRAP 24. A GitHub *project* page is served from /<repo>/, not from the
+      # domain root. Next rewrites the URLs it generates itself, but not the
+      # ones we build by hand — those go through lib/basePath.ts, which reads
+      # this. Get it wrong and everything works locally and 404s in production.
+      - name: Build static export
+        run: npm run build
+        env:
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+
+      # Pages runs Jekyll by default, and Jekyll silently drops every directory
+      # beginning with an underscore — which is all of _next. Without this file
+      # the HTML deploys and every script and stylesheet 404s.
+      - name: Disable Jekyll
+        run: touch out/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
