@@ -9,6 +9,7 @@
     "start": "npx serve out",
     "typecheck": "tsc --noEmit",
     "devanagari": "node scripts/build-devanagari.mjs",
+    "og": "node scripts/build-og.mjs",
     "devanagari:verify": "node scripts/serve.mjs scripts/.verify 4321"
   },
   "dependencies": {

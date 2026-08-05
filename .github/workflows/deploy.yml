@@ -41,6 +41,9 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          # Absolute, for the og:image. Crawlers ignore relative ones, and the
+          # share card is how this invitation actually reaches people.
+          NEXT_PUBLIC_SITE_URL: ${{ steps.pages.outputs.base_url }}
 
       # Pages runs Jekyll by default, and Jekyll silently drops every directory
       # beginning with an underscore — which is all of _next. Without this file

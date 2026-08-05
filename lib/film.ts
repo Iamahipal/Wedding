@@ -189,6 +189,10 @@ export interface FilmState {
   reducedMotion: boolean
   /** Decided once at mount from the device, never from React state. */
   lowEnd: boolean
+  /** Live render scale, 0..1 — lowered by FrameDriver when frames run late. */
+  quality: number
+  /** Measured, not assumed. Reported by ?diag. */
+  fps: number
   portrait: boolean
   aspect: number
   fov: number
@@ -226,6 +230,8 @@ export const film: FilmState = {
 
   reducedMotion: false,
   lowEnd: false,
+  quality: 1,
+  fps: 0,
   portrait: false,
   aspect: 16 / 9,
   fov: 38,
