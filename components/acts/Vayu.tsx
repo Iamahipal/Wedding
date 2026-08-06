@@ -4,6 +4,7 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
+import Breath from './Breath'
 import { REGION_OF, type Region } from '@/lib/content'
 import { film, STATION } from '@/lib/film'
 import { clamp01, lerp, mulberry32, smootherstep, smoothstep, visibleHeightAt, visibleWidthAt } from '@/lib/math'
@@ -182,11 +183,18 @@ function Chunni({ variant, phase, side }: { variant: Region; phase: number; side
      * TRAP 9: it is sized from the viewport at its actual distance, not given a
      * world width. "Fills the frame" has to mean fills *this* frame.
      */
-    // The two cloths run the same curve, offset — one is already pulling away
-    // as the other arrives, so they cross rather than move as a pair.
-    const q = clamp01(p + phase)
+    /**
+     * The cloths now open the act rather than being it.
+     *
+     * They sweep through, carry the two households' weaves past the lens, and
+     * are gone by roughly a third of the way in — which covers the cut from
+     * Akasha and hands the act over to the breath. Held any longer this reads
+     * as a cloth simulation, which is a technique rather than an idea, and
+     * वायु deserves better than a demo of vertex displacement.
+     */
+    const q = clamp01(p * 2.9 + phase)
     const away = smootherstep(0.02, 0.58, q)
-    const lift = smootherstep(0.6, 1, q)
+    const lift = smootherstep(0.5, 1, q)
     const dist = lerp(1.25, 15, away) + (side > 0 ? 2.4 : 0)
 
     const w = visibleWidthAt(dist, film.fov, film.aspect)
@@ -358,7 +366,11 @@ function Petals() {
     const u = material.uniforms
 
     u.uWindTime.value = film.time * 0.55 + p * 5.5
-    u.uFade.value = smoothstep(0.04, 0.24, p) * (1 - smoothstep(0.9, 1, p))
+    // Petals thin out as प्राण gathers. They are the proof that the air is
+    // moving, which is the job right up until the word becomes the subject —
+    // after that they are just clutter in front of it.
+    u.uFade.value =
+      smoothstep(0.04, 0.2, p) * (1 - smoothstep(0.44, 0.62, p) * 0.75) * (1 - smoothstep(0.9, 1, p))
 
     // the drift box is sized to the viewport so the stream reads the same on a
     // phone as on a laptop instead of thinning out to nothing at the edges
@@ -376,6 +388,8 @@ export default function Vayu() {
       {/* the groom's household leads in, the bride's follows and crosses it */}
       <Chunni variant={REGION_OF.groom} phase={0} side={-1} />
       <Chunni variant={REGION_OF.bride} phase={-0.16} side={1} />
+      {/* and then the act's real subject */}
+      <Breath />
       <Petals />
     </>
   )

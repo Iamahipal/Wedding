@@ -564,12 +564,17 @@ export function shotFor(act: ActName, p: number, state: FilmState): Shot {
       break
     }
     case 'vayu': {
+      // The cloths open the act and the breath carries it, so the camera
+      // settles rather than keeps travelling: प्राण has to be *centred* when it
+      // resolves, and a look-at still drifting upward puts the word low and
+      // left in the frame at exactly the moment it is meant to be read.
       const a = smootherstep(0, 1, p)
-      shot.pz = sz + lerp(16, 5.5, a)
-      shot.py = sy + lerp(-1.6, 1.9, a)
-      shot.px = sx + Math.sin(a * Math.PI) * 1.1
+      const settle = smootherstep(0.35, 0.68, p)
+      shot.pz = sz + lerp(16, 7.5, a)
+      shot.py = sy + lerp(-1.6, 0.35, a)
+      shot.px = sx + Math.sin(a * Math.PI) * 1.1 * (1 - settle)
       shot.tz = sz - 2
-      shot.ty = sy + lerp(0, 0.8, a)
+      shot.ty = sy + lerp(0, 0.5, a) * (1 - settle)
       break
     }
     case 'agni': {
