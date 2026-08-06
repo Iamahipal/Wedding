@@ -20,20 +20,59 @@ export default function SoundToggle() {
   const [on, setOn] = useState(false)
   const [pending, setPending] = useState(false)
   const drain = useRef<(() => void) | null>(null)
+  /** Once someone turns it off on purpose, it stays off. */
+  const silenced = useRef(false)
 
   const toggle = useCallback(async () => {
     if (on) {
+      silenced.current = true
       sound.mute()
       film.audioUnlocked = false
       setOn(false)
       return
     }
+    silenced.current = false
     setPending(true)
     const ok = await sound.unlock()
     setPending(false)
     if (ok) {
       film.audioUnlocked = true
       setOn(true)
+    }
+  }, [on])
+
+  /**
+   * Sound on by default — as far as a browser will actually permit.
+   *
+   * It cannot simply play on load. Every browser blocks audio until a real user
+   * gesture, and this is worth being precise about: a **wheel scroll does not
+   * count**. Someone can scroll the entire film on a laptop without ever
+   * producing a gesture the audio policy accepts.
+   *
+   * So rather than making anyone hunt for this button, the first gesture of any
+   * kind — a tap, a click, a key — arms it. On a phone that is the moment they
+   * touch the screen to scroll, which is effectively "on by default". The
+   * control still renders from the first frame (TRAP 23), so a page that is
+   * about to make noise has already said so.
+   */
+  useEffect(() => {
+    if (on || silenced.current) return
+
+    let armed = false
+    const arm = async () => {
+      if (armed || silenced.current) return
+      armed = true
+      const ok = await sound.unlock()
+      if (ok && !silenced.current) {
+        film.audioUnlocked = true
+        setOn(true)
+      }
+    }
+
+    const events = ['pointerdown', 'touchend', 'keydown'] as const
+    for (const e of events) window.addEventListener(e, arm, { once: true, passive: true })
+    return () => {
+      for (const e of events) window.removeEventListener(e, arm)
     }
   }, [on])
 

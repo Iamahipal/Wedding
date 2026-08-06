@@ -86,7 +86,19 @@ export default function Film() {
        * between first paint and hydration there is no GSAP, and anything that
        * only hides itself in a timeline flashes at full opacity first.
        * ------------------------------------------------------------------- */
-      const caption = (act: ActName, opts: { in: number; hold: number }) => {
+      /**
+       * `span` is the fraction of the act the caption timeline is spread over.
+       *
+       * It exists because a scrubbed timeline is normalised to its trigger's
+       * range: whatever the last tween is, it finishes at the *end* of the act.
+       * So a caption could not be made to leave early by re-timing it — moving
+       * the fade-out earlier just made the whole timeline slower and it still
+       * ended at the same place. Shunya needs its caption gone before the
+       * mantra arrives at readable size, and the only way to get that is to end
+       * the trigger early rather than to shuffle keyframes inside it.
+       */
+      const caption = (act: ActName, opts: { in: number; hold: number; span?: number }) => {
+        const span = opts.span ?? 1
         const section = document.querySelector<HTMLElement>(`[data-act="${act}"]`)
         const block = document.querySelector<HTMLElement>(`[data-caption="${act}"]`)
         if (!section || !block) return
@@ -109,7 +121,9 @@ export default function Film() {
           ScrollTrigger.create({
             trigger: section,
             start: 'top top',
-            end: 'bottom top',
+            // same reasoning as the scrubbed path: Shunya's caption has to be
+            // out of the frame before the mantra reaches it
+            end: span >= 1 ? 'bottom top' : `top+=${span * 100}% top`,
             onToggle: (self) => {
               block.style.opacity = self.isActive ? '1' : '0'
             },
@@ -118,7 +132,12 @@ export default function Film() {
         }
 
         const tl = gsap.timeline({
-          scrollTrigger: { trigger: section, start: 'top top', end: 'bottom top', scrub: 0.7 },
+          scrollTrigger: {
+            trigger: section,
+            start: 'top top',
+            end: span >= 1 ? 'bottom top' : `top+=${span * 100}% top`,
+            scrub: 0.7,
+          },
         })
         tl.fromTo(
           lines,
@@ -128,8 +147,10 @@ export default function Film() {
         ).to(lines, { opacity: 0, y: -18, duration: 0.7, stagger: 0.08, ease: 'power2.in' }, opts.hold)
       }
 
-      //  शून्य — held black, then the point of light, then the mantra
-      caption('shunya', { in: 0.15, hold: 2.1 })
+      //  शून्य — held black, then the point of light, then the mantra.
+      //  Gone by 44% of the act: the mantra emerges from the residual glow at
+      //  46% and must arrive into an empty frame, not onto a caption.
+      caption('shunya', { in: 0.15, hold: 2.1, span: 0.44 })
       //  आकाश — the nakshatras resolve, then the muhurat
       caption('akasha', { in: 0.35, hold: 2.4 })
       //  वायु — breath

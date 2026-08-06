@@ -178,7 +178,10 @@ export default function Invitation() {
         </p>
       </div>
 
-      {USING_PLACEHOLDERS && (
+      {/* Local only. It is a reminder to *me* that the dates are still fake —
+          it has no business on a card being forwarded to family, and the flag
+          alone was leaving it on the live site. */}
+      {USING_PLACEHOLDERS && process.env.NODE_ENV === 'development' && (
         <div className="chrome pointer-events-none fixed bottom-3 left-3 z-40 rounded-sm border border-gold-700/60 bg-void/85 px-3 py-1.5 font-[family-name:var(--font-ui)] text-[0.6rem] uppercase tracking-[0.18em] text-gold-400/90 backdrop-blur-sm">
           Placeholder copy — see lib/content.ts
         </div>
