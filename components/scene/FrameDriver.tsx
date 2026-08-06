@@ -80,6 +80,15 @@ export default function FrameDriver() {
       el.style.opacity = v > 0.001 ? String(v) : '0'
       if (v > 0.001) el.style.backgroundColor = film.curtainColor
     }
+
+    // Hard boundary on the captions. A scrubbed tween lags the playhead on
+    // purpose, so on a fast scroll the outgoing act's caption is still fading
+    // while the next act is already on screen. This makes the boundary
+    // absolute regardless of what any timeline currently thinks.
+    for (const c of domRefs.captions) {
+      const want = film.on[c.act] > 0 ? '' : 'hidden'
+      if (c.el.style.visibility !== want) c.el.style.visibility = want
+    }
   }, -1000)
 
   return null

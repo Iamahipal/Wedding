@@ -199,11 +199,14 @@ export default function Breath() {
      * so it is given real room — a third of the scroll — rather than being a
      * moment the viewer can miss between two scroll flicks.
      */
-    const gather = smootherstep(0.42, 0.62, p)
-    const release = smootherstep(0.82, 0.96, p)
+    const gather = smootherstep(0.46, 0.66, p)
+    const release = smootherstep(0.84, 0.97, p)
     u.uResolve.value = clamp01(gather - release)
 
-    u.uFade.value = smoothstep(0.16, 0.34, p) * (1 - smoothstep(0.93, 1, p))
+    // The breath now carries the whole act — the cloths that used to open it
+    // are gone — so it arrives early and the braid gets real time to read
+    // before the word begins to gather.
+    u.uFade.value = smoothstep(0.02, 0.14, p) * (1 - smoothstep(0.94, 1, p))
 
     /**
      * TRAP 9. The current is spanned across the *viewport* and प्राण sized as a
@@ -221,7 +224,7 @@ export default function Breath() {
     const w = visibleWidthAt(dist, film.fov, film.aspect)
     u.uSpan.value = w * 2.1
     u.uRadius.value = w * (film.portrait ? 0.22 : 0.16)
-    u.uWordScale.value = (w * (film.portrait ? 0.72 : 0.44)) / wordAspect
+    u.uWordScale.value = (w * (film.portrait ? 0.66 : 0.4)) / wordAspect
 
     const h = viewport.height * gl.getPixelRatio()
     u.uHeightScale.value = (h * 0.5) / Math.tan((film.fov * Math.PI) / 360)

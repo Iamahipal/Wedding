@@ -6,6 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 
 import { ACT_ORDER, ACT_RANGE, emitBeat, film, updateFilm, type ActName } from '@/lib/film'
+import { domRefs } from '@/lib/domRefs'
 import type { FolioHandle } from './Folio'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -23,6 +24,11 @@ export default function Film() {
   useLayoutEffect(() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     film.reducedMotion = reduced
+
+    // StrictMode mounts effects twice in development; without this the caption
+    // registry accumulates duplicates and the render loop does the same work
+    // twice for every block.
+    domRefs.captions.length = 0
 
     const ctx = gsap.context(() => {
       /* ── Lenis ⇄ GSAP ────────────────────────────────────────────────────
@@ -105,6 +111,10 @@ export default function Film() {
         const lines = Array.from(block.querySelectorAll<HTMLElement>('[data-reveal]'))
         if (!lines.length) return
 
+        // the render loop enforces the act boundary on this block — see
+        // lib/domRefs.ts for why a scrubbed fade cannot do it alone
+        domRefs.captions.push({ act, el: block })
+
         if (reduced) {
           /**
            * Every caption block is `absolute inset-0`, so simply revealing them
@@ -153,8 +163,9 @@ export default function Film() {
       caption('shunya', { in: 0.15, hold: 2.1, span: 0.44 })
       //  आकाश — the nakshatras resolve, then the muhurat
       caption('akasha', { in: 0.35, hold: 2.4 })
-      //  वायु — breath
-      caption('vayu', { in: 0.3, hold: 2.2 })
+      //  वायु — the breath names itself, then gets out of the way: प्राण owns
+      //  the centre of the frame from 62% of the act onward
+      caption('vayu', { in: 0.25, hold: 2.0, span: 0.55 })
       //  अग्नि — the seven steps get their own reveal, below
       caption('agni', { in: 0.2, hold: 2.6 })
       //  जल — stillness

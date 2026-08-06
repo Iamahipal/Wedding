@@ -20,7 +20,10 @@ import { actCopy, saptapadi } from '@/lib/content'
 const PLACEMENT: Record<ActName, string> = {
   shunya: 'items-end pb-[14vh]',
   akasha: 'items-end pb-[16vh]',
-  vayu: 'items-center',
+  // Low, never centred. प्राण resolves dead centre, and a caption sharing that
+  // space is a caption printed across the word. Horizontally centred still —
+  // this is read on a phone first.
+  vayu: 'items-end pb-[15vh]',
   agni: 'items-start pt-[12vh]',
   jal: 'items-start pt-[11vh]',
   prithvi: 'items-start pt-[10vh]',

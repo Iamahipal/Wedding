@@ -100,8 +100,10 @@ export interface Curtain {
 export const BOUNDARY_CURTAIN: Record<string, Curtain> = {
   // we are physically inside the gold of the mantra at this instant
   'shunya>akasha': { color: '#c98f36', width: 0.012 },
-  // the chunni sweeps up and fills frame — warm silk, not black
-  'akasha>vayu': { color: '#7d2c18', width: 0.011 },
+  // Dark. This used to be a warm rust, chosen when a chunni filled the frame on
+  // the other side of the cut — with the cloth gone it was a flat orange field
+  // several seconds long that read as a broken page rather than as silk.
+  'akasha>vayu': { color: '#0a0603', width: 0.009 },
   'vayu>agni': { color: '#120802', width: 0.010 },
   // the fire flares out; the stillness of Jal lands hardest out of white
   'agni>jal': { color: '#f7e2b4', width: 0.013 },
