@@ -1,8 +1,10 @@
 name: Deploy to GitHub Pages
 
+# Manual only. Vercel is the live host now; leaving the push trigger on meant
+# every commit queued a second deploy against a Pages site that is no longer
+# configured, which just fills the Actions tab with hung runs. Kept rather than
+# deleted so Pages remains a one-click fallback.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

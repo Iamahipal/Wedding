@@ -16,8 +16,24 @@ import { site } from '@/lib/content'
  * Absolute, because a relative og:image is ignored by most crawlers — and this
  * invitation will be *forwarded*, not typed into a browser bar. WhatsApp is how
  * it actually reaches people, and what they see there is this card.
+ *
+ * Resolved per host rather than hard-coded, so the card keeps pointing at a URL
+ * that exists no matter where this is deployed:
+ *
+ *   1. an explicit NEXT_PUBLIC_SITE_URL, if anyone sets one
+ *   2. Vercel's own production domain, which it injects at build time — so a
+ *      fresh import needs no configuration at all
+ *   3. the GitHub Pages URL, as the last resort
+ *
+ * Getting this wrong is invisible locally and only shows up as a broken preview
+ * in somebody's chat, which is the worst possible place to discover it.
  */
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://iamahipal.github.io/Wedding/'
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/`
+    : '') ||
+  'https://iamahipal.github.io/Wedding/'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
