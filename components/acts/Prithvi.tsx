@@ -434,8 +434,19 @@ function Names() {
 
     if (group.current) {
       group.current.visible = reveal > 0.001
-      // forward of the rear pillars, or the glyphs read as tangled up in them
-      group.current.position.set(0, lerp(1.75, 1.95, reveal), 2.4)
+      /**
+       * Forward of the *front* pillars, not merely the rear ones.
+       *
+       * The names sat at z = 2.4 with the front pillars at z = 3.6, so both
+       * ends of the pair were being cut in half by gold columns — निहारिका lost
+       * its first letter and महिपाल its last. The comment claimed the glyphs
+       * were clear of the structure; they were behind two thirds of it.
+       *
+       * They now sit in front of the whole mandap and occlude it, which is also
+       * the right reading: this is the moment the names arrive, and nothing
+       * should be in front of them.
+       */
+      group.current.position.set(0, lerp(1.75, 1.95, reveal), PILLAR_SPREAD + 1.7)
       // face the camera squarely — these have to be read, not admired at an angle
       group.current.quaternion.copy(camera.quaternion)
     }
