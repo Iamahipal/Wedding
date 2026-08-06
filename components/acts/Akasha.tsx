@@ -314,10 +314,147 @@ function Nakshatras() {
     su.uFade.value = fade
 
     const lu = built.lineMat.uniforms
-    // the lines draw themselves across the middle of the act, one mansion at a
-    // time, and are all complete before the two stars meet
-    lu.uDraw.value = smootherstep(0.12, 0.66, p)
+    // one mansion at a time, and all complete before the couple's own two are
+    // picked out of them
+    lu.uDraw.value = smootherstep(0.1, 0.4, p)
     lu.uFade.value = fade * 0.9
+  })
+
+  return (
+    <group ref={group}>
+      <points geometry={built.starGeo} material={built.starMat} frustumCulled={false} />
+      <lineSegments geometry={built.lineGeo} material={built.lineMat} frustumCulled={false} />
+    </group>
+  )
+}
+
+/* ── गुण मिलान — the matching ────────────────────────────────────────────────
+ *
+ * Before a marriage is agreed, the two horoscopes are compared: अष्टकूट, eight
+ * kootas totalling 36 गुण, and a match needs at least eighteen. What most of
+ * that arithmetic actually runs on is the pair of *birth nakshatras* — Tara,
+ * Yoni, Gana and Nadi are all derived from them, twenty-one of the thirty-six
+ * points, and Nadi alone can veto a match scoring twenty-eight.
+ *
+ * So the sky really does decide the marriage, and this really is done with the
+ * couple's two stars. The earlier version of this act had them drift across the
+ * heavens and merge, which was the one part that was invented — and the truer
+ * image turns out to be the better one:
+ *
+ *   the match is a line drawn between two stars that stay exactly where they
+ *   are.
+ *
+ * That is what guna milan is. A relationship computed between two fixed
+ * positions, not a convergence. Neither star has to stop being itself.
+ * -------------------------------------------------------------------------- */
+
+const milanVert = /* glsl */ `
+  attribute float aT;
+  varying float vT;
+  void main() {
+    vT = aT;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`
+
+const milanFrag = /* glsl */ `
+  precision highp float;
+  varying float vT;
+  uniform float uDraw;
+  uniform float uFade;
+  uniform vec3  uColor;
+  void main() {
+    if (vT > uDraw) discard;
+    // brightest at the leading tip while it is still being drawn
+    float tip = 1.0 - smoothstep(0.0, 0.25, uDraw - vT);
+    float a = (0.45 + tip * 0.55) * uFade;
+    gl_FragColor = vec4(uColor * a, a);
+  }
+`
+
+function GunaMilan() {
+  const group = useRef<THREE.Group>(null)
+
+  const built = useMemo(() => {
+    const data = buildNakshatras()
+    const a = data[couple.bride.nakshatra % 27]
+    const b = data[couple.groom.nakshatra % 27]
+
+    // the two mansions, each left exactly where it belongs
+    const starPos = new Float32Array([a.nx, a.ny, a.z, b.nx, b.ny, b.z])
+    const starGeo = new THREE.BufferGeometry()
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3))
+    starGeo.setAttribute('aSize', new THREE.Float32BufferAttribute([3.1, 3.1], 1))
+    starGeo.setAttribute('aSeed', new THREE.Float32BufferAttribute([0.2, 0.7], 1))
+    starGeo.setAttribute('aTint', new THREE.Float32BufferAttribute([0.15, 0.15], 1))
+    starGeo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, -100), 400)
+
+    const starMat = new THREE.ShaderMaterial({
+      vertexShader: starVertex,
+      fragmentShader: starFragment,
+      uniforms: {
+        uTime: { value: 0 },
+        uHeightScale: { value: 600 },
+        uFade: { value: 0 },
+        uWarm: { value: new THREE.Color('#ffd894') },
+        uCool: { value: new THREE.Color('#fffaf0') },
+      },
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false,
+    })
+
+    const lineGeo = new THREE.BufferGeometry()
+    lineGeo.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute([a.nx, a.ny, a.z, b.nx, b.ny, b.z], 3),
+    )
+    lineGeo.setAttribute('aT', new THREE.Float32BufferAttribute([0, 1], 1))
+    lineGeo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, -100), 400)
+
+    const lineMat = new THREE.ShaderMaterial({
+      vertexShader: milanVert,
+      fragmentShader: milanFrag,
+      uniforms: {
+        uDraw: { value: 0 },
+        uFade: { value: 0 },
+        uColor: { value: new THREE.Color('#e8b866') },
+      },
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false,
+    })
+
+    return { starGeo, starMat, lineGeo, lineMat }
+  }, [])
+
+  useFrame(({ size: viewport, gl }) => {
+    if (film.on.akasha === 0) return
+    const p = film.p.akasha
+
+    // shares the nakshatra band's scale exactly — these two stars *are* two of
+    // those mansions, and a hair of disagreement shows as a star floating
+    // beside the constellation it belongs to
+    const s = layout.scale
+    if (group.current) group.current.scale.set(s, s, 1)
+
+    const h = viewport.height * gl.getPixelRatio()
+    const heightScale = (h * 0.5) / Math.tan((film.fov * Math.PI) / 360)
+
+    const found = smootherstep(0.36, 0.5, p)
+    const drawn = smootherstep(0.44, 0.6, p)
+    const out = 1 - smoothstep(0.9, 1, p)
+
+    built.starMat.uniforms.uTime.value = film.time
+    built.starMat.uniforms.uHeightScale.value = heightScale
+    built.starMat.uniforms.uFade.value = found * out
+
+    built.lineMat.uniforms.uDraw.value = drawn
+    built.lineMat.uniforms.uFade.value = found * out * 0.85
+
+    film.bloomBias = Math.max(film.bloomBias, found * out * 0.25)
   })
 
   return (
@@ -333,9 +470,9 @@ export default function Akasha() {
     <>
       <Starfield />
       <Nakshatras />
-      {/* the two stars a bride is actually shown — see DhruvaArundhati.tsx.
-          This replaced a pair of invented "birth nakshatras" drifting together,
-          which was plausible and was not a rite anybody performs. */}
+      {/* the sky decides the marriage… */}
+      <GunaMilan />
+      {/* …and then the sky witnesses it */}
       <DhruvaArundhati />
     </>
   )

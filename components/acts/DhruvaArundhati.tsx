@@ -226,11 +226,13 @@ export default function DhruvaArundhati() {
      * Dhruva at the end of that line, and only then Arundhati — which is the
      * order the gesture is actually made in.
      * ------------------------------------------------------------------ */
-    const sages = smootherstep(0.34, 0.58, p)
-    const pointer = smootherstep(0.56, 0.72, p)
-    const dhruva = smootherstep(0.68, 0.82, p)
-    const arundhati = smootherstep(0.82, 0.95, p)
-    const out = 1 - smoothstep(0.96, 1, p)
+    // after गुण मिलान has finished — the sky decides the marriage first, and
+    // only then witnesses it
+    const sages = smootherstep(0.54, 0.7, p)
+    const pointer = smootherstep(0.68, 0.79, p)
+    const dhruva = smootherstep(0.77, 0.87, p)
+    const arundhati = smootherstep(0.87, 0.96, p)
+    const out = 1 - smoothstep(0.97, 1, p)
 
     const b = built.brightAttr
     for (let i = 0; i < 7; i++) b.setX(i, sages * 0.85 * out)

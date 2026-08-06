@@ -75,13 +75,16 @@ export const actCopy = {
     roman: 'Akasha',
     english: 'ether',
     /**
-     * Was "two stars, and the moment they meet" — the couple's birth nakshatras
-     * drifting together. Astrologically plausible, and not a rite anybody
-     * performs; it was invented. ध्रुव दर्शन and अरुन्धती दर्शन are real, are
-     * performed at the wedding, and are performed by looking at these exact
-     * stars — so the act now shows those instead.
+     * The act now holds both real practices, in the order they happen: गुण
+     * मिलान decides the marriage, ध्रुव and अरुन्धती दर्शन witness it.
+     *
+     * The line used to say "two stars, and the moment they meet". Matching the
+     * birth nakshatras is entirely real — most of the 36 गुण are computed from
+     * them — but the *merging* was invented, and the accurate version is the
+     * better image anyway: a line drawn between two stars that stay where they
+     * are, which is what a match actually is.
      */
-    line: 'The pole star that never wavers, and Arundhati beside her sage.',
+    line: 'Two birth stars, matched. And the pole star that never wavers.',
   },
   vayu: {
     devanagariKey: 'actVayu',
