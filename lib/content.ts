@@ -86,7 +86,14 @@ export const actCopy = {
     devanagariKey: 'actAgni',
     roman: 'Agni',
     english: 'fire',
-    line: 'Seven steps around the sacred fire. Seven promises.',
+    /**
+     * NOT "seven steps around the fire". सप्तपदी is seven steps taken
+     * *together*, and फेरे are the circumambulations — two different rites that
+     * popular writing runs into one. The phera count also varies by family
+     * (four for the four पुरुषार्थ is as standard as seven), so this line
+     * deliberately claims no count of circuits at all.
+     */
+    line: 'Seven steps taken together. Seven promises, before the fire.',
   },
   jal: {
     devanagariKey: 'actJal',
@@ -129,7 +136,10 @@ export const saptapadi = [
   { numKey: 'num4', key: 'step4', roman: 'sukha', english: 'happiness and harmony' },
   { numKey: 'num5', key: 'step5', roman: 'prajā', english: 'family, and its continuation' },
   { numKey: 'num6', key: 'step6', roman: 'ṛtu', english: 'health through every season' },
-  { numKey: 'num7', key: 'step7', roman: 'sakhya', english: 'friendship — the vow the other six rest on' },
+  // "the vow the other six rest on" used to be appended here. It is a common
+  // and lovely reading, but it is a *reading* — editorial gloss presented in
+  // the same voice as the tradition. Left as the plain meaning instead.
+  { numKey: 'num7', key: 'step7', roman: 'sakhya', english: 'friendship, and lifelong companionship' },
 ] as const
 
 /* ─────────────────────────────────────────────────────── the invitation ───── */
