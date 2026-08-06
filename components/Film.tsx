@@ -176,61 +176,16 @@ export default function Film() {
       caption('gathbandhan', { in: 0.25, hold: 2.7 })
 
       /* ── the seven steps ─────────────────────────────────────────────────
-       * Seven rotations of the camera, seven vows. Each step resolves as its
-       * circuit is completed, so the reveal is locked to the pradakshina in
-       * lib/film.ts rather than to an independent clock.
+       * No ScrollTriggers here at all any more.
+       *
+       * The vows are gold in the scene now — see components/acts/Saptapadi.tsx
+       * — and what survives on this layer is one line of meaning at a time. It
+       * is driven straight from the render loop against the *same* schedule
+       * that ignites each word, because a scrubbed tween and a shader uniform
+       * reading two different clocks is exactly how a caption ends up naming
+       * the vow before or after the one that is actually alight.
        * ------------------------------------------------------------------- */
-      const agni = document.querySelector<HTMLElement>('[data-act="agni"]')
-      const steps = Array.from(document.querySelectorAll<HTMLElement>('[data-step]'))
-      if (agni && steps.length) {
-        if (reduced) {
-          // same problem, same answer: the seven vows share one absolutely
-          // positioned box, so they are switched one at a time rather than all
-          // revealed at once
-          gsap.set(steps, { opacity: 0, y: 0 })
-          steps.forEach((el, i) => {
-            ScrollTrigger.create({
-              trigger: agni,
-              start: `top+=${(i / steps.length) * 100}% top`,
-              end: `top+=${((i + 1) / steps.length) * 100}% top`,
-              onToggle: (self) => {
-                el.style.opacity = self.isActive ? '1' : '0'
-              },
-            })
-          })
-        } else {
-          steps.forEach((el, i) => {
-            const start = (i + 0.35) / steps.length
-            const end = (i + 1.0) / steps.length
-            gsap.fromTo(
-              el,
-              { opacity: 0, y: 18 },
-              {
-                opacity: 1,
-                y: 0,
-                ease: 'power2.out',
-                scrollTrigger: {
-                  trigger: agni,
-                  start: `top+=${start * 100}% top`,
-                  end: `top+=${end * 100}% top`,
-                  scrub: 0.5,
-                },
-              },
-            )
-            gsap.to(el, {
-              opacity: 0,
-              y: -14,
-              ease: 'power2.in',
-              scrollTrigger: {
-                trigger: agni,
-                start: `top+=${(end + 0.02) * 100}% top`,
-                end: `top+=${(end + 0.14) * 100}% top`,
-                scrub: 0.5,
-              },
-            })
-          })
-        }
-      }
+      domRefs.steps = Array.from(document.querySelectorAll<HTMLElement>('[data-step]'))
 
       /* ── beats for the sound layer ───────────────────────────────────────
        * Named moments, emitted once as the playhead crosses them. The sound

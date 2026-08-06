@@ -134,7 +134,7 @@ const LOOK: Record<ActName, Look> = {
   shunya: { bloom: 0.88, threshold: 0.85, grain: 0.075, shimmer: 0, warmth: 1.0, exposure: 1.0 },
   akasha: { bloom: 0.9, threshold: 0.84, grain: 0.11, shimmer: 0, warmth: 0.97, exposure: 0.95 },
   vayu: { bloom: 0.95, threshold: 0.8, grain: 0.08, shimmer: 0, warmth: 1.07, exposure: 0.9 },
-  agni: { bloom: 1.65, threshold: 0.64, grain: 0.07, shimmer: 1, warmth: 1.14, exposure: 1.06 },
+  agni: { bloom: 1.2, threshold: 0.72, grain: 0.07, shimmer: 1, warmth: 1.14, exposure: 1.0 },
   jal: { bloom: 0.78, threshold: 0.82, grain: 0.06, shimmer: 0, warmth: 0.94, exposure: 0.88 },
   prithvi: { bloom: 1.0, threshold: 0.75, grain: 0.06, shimmer: 0, warmth: 1.03, exposure: 1.0 },
   gathbandhan: { bloom: 1.1, threshold: 0.72, grain: 0.055, shimmer: 0, warmth: 1.0, exposure: 1.0 },
@@ -580,15 +580,30 @@ export function shotFor(act: ActName, p: number, state: FilmState): Shot {
       break
     }
     case 'agni': {
-      // pradakshina — seven circuits of the fire, clockwise, at a steady radius
-      const turns = 7
-      const ang = p * Math.PI * 2 * turns
-      const radius = lerp(12.5, 7.5, smootherstep(0, 1, p))
+      /**
+       * A quarter turn, not seven circuits.
+       *
+       * Seven pradakshina around the fire was the literal reading of the ritual
+       * and it does not survive contact with the image: the flame is radially
+       * symmetric, so orbiting it produces seven *identical* views. That is
+       * motion without change, and at scroll speed it reads as vibration rather
+       * than as ceremony. No amount of easing fixes a camera move that reveals
+       * nothing.
+       *
+       * The circuits moved into the vows instead — see Saptapadi.tsx, where the
+       * seven words ignite one at a time in a ring around the kund. So the
+       * camera can do what it should have been doing all along: begin high and
+       * wide, where the whole ring can be read at once, and come down and in as
+       * the vows complete until nothing is left in frame but the fire.
+       */
+      const a = smootherstep(0, 1, p)
+      const ang = lerp(-0.6, 0.66, a)
+      const radius = lerp(15, 8.2, a)
       shot.px = sx + Math.sin(ang) * radius
       shot.pz = sz + Math.cos(ang) * radius
-      shot.py = sy + lerp(3.4, 1.5, smootherstep(0, 1, p))
+      shot.py = sy + lerp(10.5, 3.1, a)
       shot.tx = sx
-      shot.ty = sy + lerp(1.2, 2.1, smootherstep(0, 1, p))
+      shot.ty = sy + lerp(0.3, 1.7, a)
       shot.tz = sz
       break
     }

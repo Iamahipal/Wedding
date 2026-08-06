@@ -4,6 +4,7 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
+import Saptapadi from './Saptapadi'
 import { film, STATION } from '@/lib/film'
 import { clamp01, lerp, mulberry32, smoothstep } from '@/lib/math'
 import { simplex3d } from '@/lib/shaders/noise'
@@ -120,7 +121,16 @@ const flameFragment = /* glsl */ `
 
     // fade the very top out so it dissolves instead of ending in a flat lid
     float top = 1.0 - smoothstep(0.55, 1.0, h);
-    float base = smoothstep(-0.02, 0.06, h);
+
+    /**
+     * And fade the very *bottom* in over a real distance. The flame is drawn
+     * additively and the kund sits directly beneath it, so a density that
+     * starts at full strength right at y=0 paints the hottest part of the fire
+     * straight onto the brick — which is why the pit kept coming out white no
+     * matter how dark its material was made. The material was never the
+     * problem.
+     */
+    float base = smoothstep(0.0, 0.10, h);
 
     float d = clamp(body * top * base, 0.0, 1.0);
 
@@ -197,7 +207,9 @@ function Flame() {
         // obvious concentric shells through the flame.
         defines: { FLAME_STEPS: film.lowEnd ? 10 : 16 },
         uniforms: {
-          uOrigin: { value: ORIGIN.clone() },
+          // lifted clear of the kund's mouth, so the fire rises *out of* the
+          // pit rather than being co-located with its top surface
+          uOrigin: { value: ORIGIN.clone().add(new THREE.Vector3(0, 0.12, 0)) },
           uTime: { value: 0 },
           uIntensity: { value: 1.35 },
           uHeight: { value: 4.2 },
@@ -416,11 +428,14 @@ function Kund() {
     // Brick and sandalwood, not metal. A metallic kund sitting under a light
     // this close blows to flat white and steals the frame from the fire — and
     // the one thing that must be the brightest object in this act is the fire.
+    // Darker again. The kund sits directly under the flame quad, which is
+    // additive, so it takes the fire's glow on top of the fire's light — two
+    // brightenings stacked. Every value here has to assume both.
     const m = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color('#43200d'),
-      metalness: 0.08,
-      roughness: 0.82,
-      envMapIntensity: 0.5,
+      color: new THREE.Color('#2a1409'),
+      metalness: 0.05,
+      roughness: 0.9,
+      envMapIntensity: 0.28,
     })
 
     return { geometry: merged, material: m }
@@ -485,7 +500,7 @@ function FireLight() {
     // Sits barely a unit above the kund, and three.js lights fall off as 1/d² —
     // so the intensity that looks reasonable as a number blows the brick to
     // white. This is the value the pit actually reads at, measured.
-    l.intensity = (2.6 + flare * 3.4) * flicker * smoothstep(0, 0.06, p)
+    l.intensity = (1.5 + flare * 2.2) * flicker * smoothstep(0, 0.06, p)
     l.position.set(0, 1.1 + Math.sin(t * 2.3) * 0.12, 0)
   })
 
@@ -496,6 +511,7 @@ export default function Agni() {
   return (
     <>
       <Kund />
+      <Saptapadi />
       <Flame />
       <Embers />
       <FireLight />

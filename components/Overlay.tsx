@@ -66,29 +66,27 @@ export default function Overlay() {
       })}
 
       {/* ── the seven steps ────────────────────────────────────────────────
-          One per circuit of the fire. These are the *themes* of the vows —
-          each is the single Sanskrit word its step is named for. The full
-          Saptapadi mantras are liturgical text that varies by tradition,
-          region and family, and are deliberately not reproduced or
-          approximated here. ------------------------------------------------ */}
-      <div className="absolute inset-x-0 bottom-0 flex justify-center pb-[13vh]">
-        <div className="relative h-[9.5rem] w-full max-w-[40rem] px-6">
+          The words themselves are in the scene now — cut in gold and lit one
+          at a time in a ring around the fire (components/acts/Saptapadi.tsx).
+          What is left here is only their meaning, one line at a time, because
+          a guest who cannot read Devanagari should still know what is being
+          promised.
+
+          These are the *themes* of the vows: each is the single Sanskrit word
+          its step is named for. The full Saptapadi mantras are liturgical
+          text that varies by tradition, region and family, and are
+          deliberately not reproduced or approximated anywhere in this film.
+          ---------------------------------------------------------------- */}
+      <div className="absolute inset-x-0 bottom-0 flex justify-center pb-[11vh]">
+        <div className="relative h-16 w-full max-w-[34rem] px-6">
           {saptapadi.map((step, i) => (
             <div
               key={step.key}
               data-step={i + 1}
               className="absolute inset-x-0 top-0 flex flex-col items-center text-center"
             >
-              <div className="flex items-center gap-3 text-gold-400/70">
-                <span className="h-px w-8 bg-gold-500/50" />
-                <Devanagari name={step.numKey} height="0.95rem" />
-                <span className="h-px w-8 bg-gold-500/50" />
-              </div>
-              <div className="mt-3 flex justify-center text-gold-200">
-                <Devanagari name={step.key} gradient height="clamp(2rem, 5.5vw, 3.1rem)" />
-              </div>
-              <p className="eyebrow mt-3">{step.roman}</p>
-              <p className="mt-2 text-[clamp(0.9rem,2.1vw,1.1rem)] font-light text-gold-100/75">
+              <p className="eyebrow">{step.roman}</p>
+              <p className="mt-2 text-[clamp(0.88rem,2vw,1.05rem)] font-light text-gold-100/70">
                 {step.english}
               </p>
             </div>

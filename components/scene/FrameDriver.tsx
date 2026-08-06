@@ -4,6 +4,7 @@ import { useFrame } from '@react-three/fiber'
 
 import { film, tickFilm } from '@/lib/film'
 import { domRefs } from '@/lib/domRefs'
+import { smoothstep } from '@/lib/math'
 
 /**
  * Runs first, every frame, before anything reads the damped look values.
@@ -68,6 +69,29 @@ export default function FrameDriver() {
     for (const c of domRefs.captions) {
       const want = film.on[c.act] > 0 ? '' : 'hidden'
       if (c.el.style.visibility !== want) c.el.style.visibility = want
+    }
+
+    // The seven vow meanings, on the same schedule that lights the gold words
+    // in the ring around the fire. One line at a time; nothing when Agni is
+    // not the act on screen.
+    if (domRefs.steps.length) {
+      const live = film.on.agni > 0
+      const p = film.p.agni
+      const n = domRefs.steps.length
+      for (let i = 0; i < n; i++) {
+        let o = 0
+        if (live) {
+          const from = (i + 0.12) / n
+          const to = (i + 0.62) / n
+          const outFrom = (i + 1.05) / n
+          const outTo = (i + 1.35) / n
+          const rise = smoothstep(from, to, p)
+          const fall = i === n - 1 ? 1 - smoothstep(0.95, 1, p) : 1 - smoothstep(outFrom, outTo, p)
+          o = rise * fall
+        }
+        const s = o < 0.002 ? '0' : o.toFixed(3)
+        if (domRefs.steps[i].style.opacity !== s) domRefs.steps[i].style.opacity = s
+      }
     }
   }, -1000)
 

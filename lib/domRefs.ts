@@ -24,8 +24,16 @@ export const domRefs: {
    * not own the playhead is hidden, whatever its tween currently believes.
    */
   captions: { act: ActName; el: HTMLElement }[]
+  /**
+   * The seven vow meanings, in order. Driven straight from the render loop
+   * against the same schedule that ignites the gold words in the ring, so the
+   * line and the letter it belongs to can never drift apart — which they would
+   * if one were a scrubbed tween and the other a shader uniform.
+   */
+  steps: HTMLElement[]
 } = {
   curtain: null,
   hud: null,
   captions: [],
+  steps: [],
 }
