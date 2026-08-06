@@ -4,6 +4,7 @@ import { useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
+import DhruvaArundhati from './DhruvaArundhati'
 import { film } from '@/lib/film'
 import { buildNakshatras } from '@/lib/nakshatra'
 import { clamp01, lerp, mulberry32, smootherstep, smoothstep, visibleHeightAt, visibleWidthAt } from '@/lib/math'
@@ -13,11 +14,13 @@ import { couple } from '@/lib/content'
  *
  * Through the letterforms and out into deep space. A field of stars resolves
  * into the 27 nakshatras, the lunar mansions, with the constellation lines
- * drawing themselves between the points. Two stars — the couple's birth
- * nakshatras — drift across the sky and align.
+ * drawing themselves between the points.
  *
- * The शुभ मुहूर्त, the auspicious moment, is an astronomical event. So it is
- * shown as one: nothing announces it, two stars simply arrive at the same place.
+ * Then the सप्तर्षि, and the two stars a bride is actually shown — ध्रुव and
+ * अरुन्धती. See DhruvaArundhati.tsx.
+ *
+ * The शुभ मुहूर्त, the auspicious moment, is an astronomical event, so the act
+ * shows astronomy: nothing here is announced, it is simply pointed at.
  * -------------------------------------------------------------------------- */
 
 const STAR_COUNT = 9000
@@ -325,125 +328,15 @@ function Nakshatras() {
   )
 }
 
-/**
- * The two birth stars. They drift toward one another across the whole act and
- * arrive together — no label, no announcement. The muhurat is the moment two
- * things are in the same place.
- */
-function BirthStars() {
-  const a = useRef<THREE.Mesh>(null)
-  const b = useRef<THREE.Mesh>(null)
-  const glow = useRef<THREE.Mesh>(null)
-
-  const material = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        vertexShader: /* glsl */ `
-          varying vec2 vUv;
-          void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
-        `,
-        fragmentShader: /* glsl */ `
-          precision highp float;
-          varying vec2 vUv;
-          uniform float uIntensity;
-          uniform vec3 uColor;
-          void main() {
-            float r = length(vUv - 0.5) * 2.0;
-            if (r > 1.0) discard;
-            float core = pow(max(0.0, 1.0 - r), 5.0);
-            float halo = exp(-r * 2.6) - exp(-2.6);
-            float av = core + halo * 0.5;
-            gl_FragColor = vec4(uColor * av * uIntensity, av);
-          }
-        `,
-        uniforms: {
-          uIntensity: { value: 1 },
-          uColor: { value: new THREE.Color('#fff2d6') },
-        },
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        toneMapped: false,
-      }),
-    [],
-  )
-
-  const flareMaterial = useMemo(() => {
-    const m = material.clone()
-    m.uniforms.uColor.value = new THREE.Color('#ffd18a')
-    return m
-  }, [material])
-
-  const start = useMemo(() => {
-    const data = buildNakshatras()
-    return {
-      a: data[couple.bride.nakshatra % 27],
-      b: data[couple.groom.nakshatra % 27],
-    }
-  }, [])
-
-  useFrame(({ camera }) => {
-    if (film.on.akasha === 0) return
-    const p = film.p.akasha
-    const meet = smootherstep(0.42, 0.88, p)
-    const s = layout.scale
-    const rise = clamp01(smoothstep(0.06, 0.22, p))
-
-    // They meet where the camera has trucked to by the end of the act, not at
-    // the world origin — otherwise the one moment the act is built around
-    // happens off the side of the frame.
-    const tx = 13
-    const ty = -0.06 * s
-    const tz = -70
-
-    const place = (mesh: THREE.Mesh | null, from: (typeof start)['a']) => {
-      if (!mesh) return
-      mesh.position.set(
-        lerp(from.nx * s, tx, meet),
-        lerp(from.ny * s, ty, meet),
-        lerp(from.z, tz, meet),
-      )
-      mesh.quaternion.copy(camera.quaternion)
-      mesh.scale.setScalar(lerp(0.9, 1.6, meet))
-      ;(mesh.material as THREE.ShaderMaterial).uniforms.uIntensity.value = (1.6 + meet * 2.6) * rise
-    }
-
-    place(a.current, start.a)
-    place(b.current, start.b)
-
-    // the flare of the meeting itself — brief, and only at the very end
-    if (glow.current) {
-      const flare = smoothstep(0.8, 0.93, p) * (1 - smoothstep(0.95, 1, p))
-      glow.current.visible = flare > 0.001
-      glow.current.position.set(tx, ty, tz + 0.5)
-      glow.current.quaternion.copy(camera.quaternion)
-      glow.current.scale.setScalar(lerp(2, 18, flare))
-      ;(glow.current.material as THREE.ShaderMaterial).uniforms.uIntensity.value = flare * 5
-      film.bloomBias = Math.max(film.bloomBias, flare * 1.1)
-    }
-  })
-
-  return (
-    <>
-      <mesh ref={a} material={material} frustumCulled={false}>
-        <planeGeometry args={[1.6, 1.6]} />
-      </mesh>
-      <mesh ref={b} material={material} frustumCulled={false}>
-        <planeGeometry args={[1.6, 1.6]} />
-      </mesh>
-      <mesh ref={glow} material={flareMaterial} frustumCulled={false} visible={false}>
-        <planeGeometry args={[1, 1]} />
-      </mesh>
-    </>
-  )
-}
-
 export default function Akasha() {
   return (
     <>
       <Starfield />
       <Nakshatras />
-      <BirthStars />
+      {/* the two stars a bride is actually shown — see DhruvaArundhati.tsx.
+          This replaced a pair of invented "birth nakshatras" drifting together,
+          which was plausible and was not a rite anybody performs. */}
+      <DhruvaArundhati />
     </>
   )
 }

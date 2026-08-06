@@ -74,7 +74,14 @@ export const actCopy = {
     devanagariKey: 'actAkasha',
     roman: 'Akasha',
     english: 'ether',
-    line: 'Twenty-seven lunar mansions. Two stars, and the moment they meet.',
+    /**
+     * Was "two stars, and the moment they meet" — the couple's birth nakshatras
+     * drifting together. Astrologically plausible, and not a rite anybody
+     * performs; it was invented. ध्रुव दर्शन and अरुन्धती दर्शन are real, are
+     * performed at the wedding, and are performed by looking at these exact
+     * stars — so the act now shows those instead.
+     */
+    line: 'The pole star that never wavers, and Arundhati beside her sage.',
   },
   vayu: {
     devanagariKey: 'actVayu',
