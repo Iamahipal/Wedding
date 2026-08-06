@@ -10,10 +10,19 @@ permissions:
   pages: write
   id-token: write
 
-# One deploy at a time; a queued run supersedes the one before it.
+# One deploy at a time — and crucially, in-progress runs are NOT cancelled.
+#
+# `cancel-in-progress: true` is the right default almost everywhere and is
+# wrong here. Cancelling a run that is already inside actions/deploy-pages
+# kills it while the Pages API still holds the deployment lock, and the *next*
+# run then sits in "Run actions/deploy-pages" indefinitely waiting for a lock
+# nobody will ever release. The build goes green, the deploy hangs forever.
+#
+# Pushing several commits in a row is exactly what triggers it. GitHub's own
+# starter workflow sets this to false for this reason.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
