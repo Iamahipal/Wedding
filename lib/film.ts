@@ -191,7 +191,7 @@ export interface FilmState {
   reducedMotion: boolean
   /** Decided once at mount from the device, never from React state. */
   lowEnd: boolean
-  /** Live render scale, 0..1 — lowered by FrameDriver when frames run late. */
+  /** The renderer's pixel ratio. Fixed at mount; reported by ?diag. */
   quality: number
   /** Measured, not assumed. Reported by ?diag. */
   fps: number

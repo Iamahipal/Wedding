@@ -73,7 +73,7 @@ export default function Diag() {
         ['scrollY', `${Math.round(window.scrollY)} / ${Math.round(scrollable)}`],
         ['doc height', `${doc.scrollHeight}px vs vh ${window.innerHeight}`],
         ['webgl', gl],
-        ['fps / quality', `${film.fps} @ ${(film.quality * 100).toFixed(0)}%`],
+        ['fps / render dpr', `${film.fps} @ ${film.quality.toFixed(2)}x`],
         ['dpr / cores', `${window.devicePixelRatio} / ${navigator.hardwareConcurrency ?? '?'}`],
       ]
     }

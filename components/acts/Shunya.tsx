@@ -171,6 +171,25 @@ function Mantra() {
     const m = goldMaterial({ roughness: 0.2, envMapIntensity: 1.3 })
     m.emissive = new THREE.Color('#ff9d3a')
     m.emissiveIntensity = 0
+
+    /**
+     * A clearcoat over the gold, and it is not decoration.
+     *
+     * The body of the metal is deliberately rough enough that half of it stays
+     * dark — that is what makes it read as metal at all. But a rough surface
+     * also smears every highlight into a soft patch, so the moving lights in
+     * the rig had nothing crisp to travel across and the mantra sat there
+     * looking matte. The clearcoat is a second, much smoother layer on top: the
+     * dark body survives, and a hard specular now slides along the bevels as
+     * the environment turns. That travel is the "shine".
+     */
+    m.clearcoat = 0.85
+    m.clearcoatRoughness = 0.08
+
+    // faded in rather than switched on — see the note in useFrame
+    m.transparent = true
+    m.depthWrite = true
+    m.opacity = 0
     return m
   }, [])
 
@@ -185,11 +204,30 @@ function Mantra() {
     if (!g || !g.parent?.visible) return
 
     const p = film.p.shunya
-    if (p < 0.46) {
+
+    /**
+     * Entry and exit are *fades*, not switches.
+     *
+     * A `visible` toggle at a progress threshold means the mantra appears
+     * between one frame and the next — and on a phone, where scroll arrives in
+     * coarse jumps, the playhead can land either side of that line twice in
+     * quick succession and the whole invocation flicks in and out. This is the
+     * calmest moment in the film; it cannot pop.
+     *
+     * So it swells out of the residual glow of the detonation and settles back
+     * as the camera passes through, and the threshold does nothing but stop the
+     * draw call once it is genuinely invisible.
+     */
+    const enter = smootherstep(0.44, 0.6, p)
+    const leave = 1 - smootherstep(0.985, 1, p)
+    const presence = enter * leave
+
+    if (presence <= 0.002) {
       g.visible = false
       return
     }
     g.visible = true
+    material.opacity = presence
 
     const cam = camera as THREE.PerspectiveCamera
     const shot = prologueMantra(p, worldWidth, cam.fov, film.aspect, film.portrait)
