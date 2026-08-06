@@ -31,7 +31,9 @@ function Mandap() {
   const beams = useRef<THREE.Group>(null)
   const arc = useRef<THREE.Mesh>(null)
 
-  const { pillar, beam, toran, gold, bronze } = useMemo(() => {
+  const pots = useRef<THREE.Group>(null)
+
+  const { pillar, beam, toran, kalash, elements, gold, bronze } = useMemo(() => {
     // a turned column: base, shaft, capital
     const profile = [
       [0.001, 0], [0.42, 0], [0.44, 0.12], [0.34, 0.22], [0.3, 0.34],
@@ -52,10 +54,50 @@ function Mandap() {
     ])
     const toran = new THREE.TubeGeometry(curve, 48, 0.055, 6, false)
 
+    /**
+     * A कलश on each pillar.
+     *
+     * Research finding, and a better one than the one I went looking for. The
+     * mandap is described as a cosmological model: pots at its four corners for
+     * earth, water, fire and air, and the canopy above them as the fifth —
+     * आकाश. The structure this whole film is built on turns out to be built
+     * into the object the film ends in. See RESEARCH.md §6.
+     *
+     * I had gone looking for the four पुरुषार्थ to put on these pillars, which
+     * would have rhymed with this family's four pheras. That reading is real
+     * but it is one of at least four the sources give — ashramas, Vedas,
+     * purusharthas, the couple's parents — and they do not reconcile. Asserting
+     * one as *the* meaning would have been inventing certainty. The five
+     * elements are a claim about the mandap's form rather than its symbolism,
+     * and the film can make it without picking a side.
+     */
+    const kalash = new THREE.LatheGeometry(
+      [
+        [0.001, 0], [0.15, 0], [0.18, 0.05], [0.14, 0.1], [0.23, 0.2],
+        [0.25, 0.31], [0.19, 0.42], [0.13, 0.48], [0.18, 0.54], [0.19, 0.58],
+        [0.14, 0.57],
+      ].map(([x, y]) => new THREE.Vector2(x, y)),
+      20,
+    )
+
+    /**
+     * Each pot carries its element's *temperature*, and every one of them stays
+     * inside the gold family — water is a cooler, creamier gold and not a blue
+     * one. The palette does not get an exception for being symbolic.
+     */
+    const elements = [
+      goldMaterial({ roughness: 0.42, color: '#c98a3f', envMapIntensity: 0.85 }), // पृथ्वी
+      goldMaterial({ roughness: 0.18, color: '#ffe4b0', envMapIntensity: 1.25 }), // जल
+      goldMaterial({ roughness: 0.26, color: '#ffa63f', envMapIntensity: 1.2 }), // अग्नि
+      goldMaterial({ roughness: 0.3, color: '#ffd89a', envMapIntensity: 1.05 }), // वायु
+    ]
+
     return {
       pillar,
       beam,
       toran,
+      kalash,
+      elements,
       gold: goldMaterial({ roughness: 0.3, envMapIntensity: 1.0 }),
       bronze: bronzeMaterial({ roughness: 0.4 }),
     }
@@ -91,6 +133,17 @@ function Mandap() {
       beams.current.position.y = lerp(4.6, 3.55, t)
     }
 
+    // the pots are set on the corners once there are corners to set them on,
+    // one after another, in the film's own order of the elements
+    if (pots.current) {
+      const kids = pots.current.children
+      for (let i = 0; i < kids.length; i++) {
+        const t = smootherstep(0.3 + i * 0.05, 0.44 + i * 0.05, p)
+        kids[i].visible = t > 0.001
+        kids[i].scale.setScalar(t)
+      }
+    }
+
     if (arc.current) {
       const t = smootherstep(0.4, 0.62, p)
       arc.current.visible = t > 0.001
@@ -109,6 +162,26 @@ function Mandap() {
         <mesh geometry={beam} material={bronze} position={[0, 0, PILLAR_SPREAD]} />
         <mesh geometry={beam} material={bronze} position={[-PILLAR_SPREAD, 0, 0]} rotation={[0, Math.PI / 2, 0]} />
         <mesh geometry={beam} material={bronze} position={[PILLAR_SPREAD, 0, 0]} rotation={[0, Math.PI / 2, 0]} />
+      </group>
+
+      {/* पृथ्वी · जल · अग्नि · वायु, one to a corner. The canopy overhead is
+          the fifth — आकाश — and is left as space rather than as an object,
+          because that is what it is. */}
+      <group ref={pots}>
+        {[
+          [-PILLAR_SPREAD, -PILLAR_SPREAD],
+          [-PILLAR_SPREAD, PILLAR_SPREAD],
+          [PILLAR_SPREAD, -PILLAR_SPREAD],
+          [PILLAR_SPREAD, PILLAR_SPREAD],
+        ].map(([x, z], i) => (
+          <mesh
+            key={i}
+            geometry={kalash}
+            material={elements[i]}
+            position={[x, 3.66, z]}
+            visible={false}
+          />
+        ))}
       </group>
 
       <mesh ref={arc} geometry={toran} material={gold} visible={false} />
