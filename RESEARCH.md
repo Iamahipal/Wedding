@@ -208,3 +208,44 @@ Sources: [Jali — Wikipedia](https://en.wikipedia.org/wiki/Jali) ·
 **Note:** the wedding-placement sources are decor blogs rather than scholarship.
 The claim is consistent across them and matches what a jaali structurally is,
 but it is not textual authority. Confidence Medium, stated as such.
+
+---
+
+## 8 · हवन कुंड — the fire pit
+
+**High** on shape. **Medium** on material preference.
+
+Square or rectangular, on a square base, with a stepped, tapering body. The
+square is read as the four cardinal directions and as stability. Used for
+गृह प्रवेश, weddings and homams.
+
+**Material:** brick, clay, or metal — and copper is repeatedly named as *the*
+material for fire rites, on grounds of thermal conductivity and ritual purity.
+
+**Film state:** the kund was brick and is now copper. It was also the subject of
+three failed fixes, and the record is worth keeping because the lesson is
+general:
+
+> The pit kept rendering pale. I blamed the flame twice and moved it — raising
+> its origin, then softening its base density. Neither worked. Sampling the kund
+> region with the flame **hidden** gave (84,61,46) against (98,71,54) with it:
+> the fire was contributing about a seventh of the brightness. The other six
+> sevenths were the scene's environment lighting a near-diffuse surface, which
+> moving the fire could never have touched.
+
+Copper resolves it as physics rather than as tuning. A metal has no diffuse
+response — it shows nothing but its surroundings, and the surroundings here are
+a dark warm surround. The vessel now sits dark on its own terms and takes the
+fire as a specular highlight rather than as a wash, which is also what copper
+next to a fire looks like. Measured after: 59% of the kund is in shadow.
+
+Sources: [Rudraksha Ratna — traditional Vedic havan kund](https://www.rudraksha-ratna.com/buy/traditional-vedic-havan-kund-copper-i) ·
+[Giri — copper agni kund](https://giri.in/products/hawan-kund-12-x-12-inches-copper-agni-kund) ·
+[Arvachin — copper havan kund](https://arvachin.in/product/copper-havan-kund-yagna-kund-homa-kund-agni-kund-puja-kund-havan-yajna-kund/)
+
+**Note:** these are retailers, not scholarship — they agree on copper but they
+also sell copper. The shape claim is better attested than the material
+preference. Confidence Medium on the latter, stated as such.
+
+**Ask the pandit:** whether this family's kund is brick-built on site or a metal
+vessel.

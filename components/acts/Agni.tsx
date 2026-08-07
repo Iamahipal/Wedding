@@ -428,14 +428,39 @@ function Kund() {
     // Brick and sandalwood, not metal. A metallic kund sitting under a light
     // this close blows to flat white and steals the frame from the fire — and
     // the one thing that must be the brightest object in this act is the fire.
-    // Darker again. The kund sits directly under the flame quad, which is
-    // additive, so it takes the fire's glow on top of the fire's light — two
-    // brightenings stacked. Every value here has to assume both.
+    /**
+     * ताम्र — copper.
+     *
+     * Two findings arrived together here and the second explains three failed
+     * fixes.
+     *
+     * Research: a हवन कुंड is brick, clay, or metal, and copper is described as
+     * the ideal material for fire rites — thermal conductivity, and purity.
+     * The film had it as brick, which is defensible but is not the first
+     * choice.
+     *
+     * Measurement: the pit kept rendering pale, and I twice blamed the flame
+     * and moved it. Sampling the kund with the flame *hidden* gave (84,61,46)
+     * against (98,71,54) with it — the fire was contributing about a seventh of
+     * the brightness. The other six sevenths were the scene's environment
+     * lighting a near-diffuse surface, which no amount of moving the fire was
+     * ever going to touch.
+     *
+     * Copper fixes both at once, and it is the physics that does it: a metal
+     * has *no diffuse response*. It shows nothing but its surroundings, and its
+     * surroundings here are a dark warm surround. So the kund goes dark on its
+     * own terms and takes the fire as a specular highlight instead of as a
+     * wash — which is also what copper beside a fire actually looks like.
+     */
     const m = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color('#2a1409'),
-      metalness: 0.05,
-      roughness: 0.9,
-      envMapIntensity: 0.28,
+      color: new THREE.Color('#7a3c15'),
+      metalness: 1,
+      // Tighter and dimmer than it wants to be. At roughness 0.44 the bright
+      // cards in the rig smear across the whole vessel and copper reads as
+      // salmon; pulling it in shrinks the highlights and lets most of the
+      // surface fall back to the dark surround, which is what makes it metal.
+      roughness: 0.3,
+      envMapIntensity: 0.34,
     })
 
     return { geometry: merged, material: m }
