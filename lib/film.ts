@@ -80,6 +80,24 @@ export const STATION: Record<ActName, readonly [number, number, number]> = {
   gathbandhan: [0, 0, -3000],
 }
 
+/**
+ * The knot's dimensions live here rather than in the act, because the camera
+ * has to solve for them: the finale is framed by width fraction, not by a
+ * hard-coded distance, and that calculation and the geometry cannot be allowed
+ * to drift apart. components/acts/Gathbandhan.tsx builds its tori from these.
+ */
+export const KNOT = {
+  /** major radius of each band */
+  R: 1.0,
+  /** tube radius */
+  tube: 0.115,
+  /** how far each band sits from centre once locked */
+  split: 0.5,
+} as const
+
+/** Widest the linked pair ever projects — the number the finale is framed on. */
+export const KNOT_WIDTH = 2 * (KNOT.split + KNOT.R + KNOT.tube)
+
 /* ─────────────────────────────────────────────────────── transitions ───── */
 
 /**
@@ -630,7 +648,31 @@ export function shotFor(act: ActName, p: number, state: FilmState): Shot {
     }
     case 'gathbandhan': {
       const a = smootherstep(0, 1, p)
-      shot.pz = sz + dollyDistance(13, 7.2, a)
+
+      /**
+       * TRAP 9, and the finale was the one act still ignoring it.
+       *
+       * The dolly used to end at a hard-coded 7.2 units. That frames the knot
+       * on a laptop and crops it in half on a phone, because `fov` in three is
+       * the *vertical* angle: at portrait aspect the horizontal field collapses
+       * to about 22°, and the linked pair is KNOT_WIDTH across. Measured on a
+       * 375pt viewport it ran off both edges at once.
+       *
+       * So the end of the move is solved rather than guessed — the knot lands
+       * on the same fraction of the viewport width on every screen, and the
+       * hard number only sets where the shot *starts*.
+       */
+      // KNOT_WIDTH is the *widest* the pair ever projects, which happens only
+      // when the group's slow turn brings it square to the lens. Framing on the
+      // worst case is the point — the knot then breathes between this size and
+      // a little under it as it rotates, and never once touches an edge.
+      const near = distanceForWidthFraction(
+        KNOT_WIDTH,
+        state.portrait ? 0.78 : 0.5,
+        shot.fov,
+        state.aspect,
+      )
+      shot.pz = sz + dollyDistance(near * 1.8, near, a)
       shot.py = sy + lerp(1.2, 0.15, a)
       shot.px = sx + lerp(1.5, 0, a)
       shot.tz = sz

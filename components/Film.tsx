@@ -306,7 +306,16 @@ export default function Film() {
         updateFilm(clamped)
       }
       film.seek = seek
-      ;(window as unknown as Record<string, unknown>).__film = {
+      /**
+       * *Merged*, never assigned. lib/debug.ts hangs the capture half of the
+       * harness — shot, sample, settle, scene, gl — off this same object from
+       * inside the Canvas, and the two effects have no ordering guarantee.
+       * Replacing the object wholesale silently deletes whichever half lost the
+       * race, which presents as `__film.shot is not a function` on some reloads
+       * and not others.
+       */
+      const w0 = window as unknown as Record<string, Record<string, unknown>>
+      Object.assign((w0.__film ??= {}), {
         state: film,
         seek,
         acts: ACT_ORDER,
@@ -315,7 +324,7 @@ export default function Film() {
           const [a, b] = ACT_RANGE[name]
           seek(a + (b - a) * p)
         },
-      }
+      })
 
       /* ── the chrome arrives a beat late ──────────────────────────────────
        * The opening is meant to be nothing at all, and it is not nothing if
