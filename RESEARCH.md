@@ -166,3 +166,45 @@ Sources: [Compare the Mandap — four pillars](https://comparethemandap.com/blog
 [Wedding mandapa — Wikipedia](https://en.wikipedia.org/wiki/Wedding_mandapa)
 
 **Ask the pandit:** which reading of the pillars their tradition uses, if any.
+
+---
+
+## 7 · जाली — the pierced screen, and where it belongs
+
+**High** on what a jaali is. **Medium** on its wedding placement.
+
+A जाली (*jālī*, "net") is a perforated stone or latticed screen — geometric,
+floral or calligraphic. Its origins are in Hindu temple architecture; it reached
+its height in Rajasthan and under the Mughals, cut from sandstone and marble.
+
+It does three things at once, and all three are practical before they are
+decorative:
+
+- **air** — small openings accelerate a breeze through them
+- **light** — hard desert sun is broken into a soft dapple, glare cut
+- **purdah** — it screens the zenana, so the women inside can look out without
+  being looked at. Hawa Mahal is the canonical example.
+
+**Placement — this is the part that changed the build.** A jaali is
+*architecture*, not ritual equipment. It is not part of a mandap and never has
+been. Where jaali and jharokha appear at a Rajasthani wedding, sources
+consistently describe them as a **backdrop set behind the couple** — carved or
+cut panels used to put a palace behind the mandap.
+
+So the film builds it as a screen standing behind the mandap rather than
+threading a lattice through a structure that has never had one.
+
+It is lit from behind, which is the only way the object makes sense: a jaali
+seen flat is a wall with holes; a jaali with light behind it is the thing people
+photograph. The first attempt lit the stone faces and left the openings dark,
+which was exactly backwards.
+
+Sources: [Jali — Wikipedia](https://en.wikipedia.org/wiki/Jali) ·
+[History of Jalis in Indian Architecture — Penn State](https://sites.psu.edu/perforatedscreendesigner/history-of-jalis-in-indian-architecture/) ·
+[Jali in Mughal Architecture — DailyArt](https://www.dailyartmagazine.com/jali-in-mughal-architecture-the-most-delicate-stone-curtains/) ·
+[Mandap decoration, Rajasthani wedding — Jeeman](https://jeeman.online/blog/mandap-decoration-ideas) ·
+[Styl — Rajasthani wedding themes](https://styl-inc.com/blogs/how-to-incorporate-royal-rajasthani-themes-in-your-2025-wedding/)
+
+**Note:** the wedding-placement sources are decor blogs rather than scholarship.
+The claim is consistent across them and matches what a jaali structurally is,
+but it is not textual authority. Confidence Medium, stated as such.

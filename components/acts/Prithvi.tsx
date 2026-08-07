@@ -9,6 +9,7 @@ import { devanagariGeometry } from '@/lib/extrude'
 import { film } from '@/lib/film'
 import { bronzeMaterial, goldMaterial } from '@/lib/gold'
 import { clamp01, lerp, scaleForWidthFraction, smootherstep, smoothstep } from '@/lib/math'
+import { patterns } from '@/lib/shaders/patterns'
 
 /* ── पृथ्वी — earth ───────────────────────────────────────────────────────────
  *
@@ -185,6 +186,146 @@ function Mandap() {
       </group>
 
       <mesh ref={arc} geometry={toran} material={gold} visible={false} />
+    </group>
+  )
+}
+
+/* ── the जाली screen ──────────────────────────────────────────────────────────
+ *
+ * A pierced stone lattice, standing *behind* the mandap.
+ *
+ * The placement is the research finding. A jaali is architecture, not ritual
+ * equipment — carved sandstone or marble in havelis and palaces, cut for three
+ * reasons at once: it accelerates a breeze through the small openings, it turns
+ * hard desert sun into a soft dapple, and it screens the zenana so the women
+ * inside can look out without being looked at. Hawa Mahal is the famous case.
+ *
+ * It is not part of a mandap. Where jaali appears at a Rajasthani wedding it is
+ * as a *backdrop* — carved jharokha and jaali panels set behind the couple to
+ * put a palace behind them. So the film does that, rather than threading a
+ * lattice through a structure that has never had one.
+ *
+ * And it is lit from behind, which is the only way the object makes sense: a
+ * jaali seen flat is a wall with holes, a jaali with light behind it is what
+ * people cross continents to photograph.
+ * -------------------------------------------------------------------------- */
+
+const jaaliVert = /* glsl */ `
+  varying vec2 vJUv;
+  void main() {
+    vJUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`
+
+const jaaliFrag = /* glsl */ `
+  precision highp float;
+  varying vec2 vJUv;
+  uniform float uReveal;
+  uniform float uFreq;
+  uniform vec3  uStone;
+
+  ${patterns}
+
+  void main() {
+    // the screen builds from the ground up, course by course, like masonry
+    if (vJUv.y > uReveal) discard;
+
+    float solid = jaali(vJUv * vec2(2.4, 1.0), uFreq);
+    if (solid < 0.5) discard;   // the void — light comes through here
+
+    /**
+     * The stone is a *silhouette*. First attempt lit its faces and left the
+     * holes dark, which is a wall with holes in it — the exact opposite of what
+     * a jaali is. The object only exists because there is light behind it, so
+     * the masonry stays near-black and the openings do all the work.
+     */
+    float shade = 0.6 + 0.4 * smoothstep(0.5, 1.0, solid);
+    shade *= mix(1.0, 0.5, vJUv.y);
+
+    /**
+     * And the panel has no edges. A hard rectangle behind the mandap reads as a
+     * poster propped against the dark rather than as a wall the scene is
+     * standing in front of, so the screen dissolves into the void on every
+     * side instead of stopping.
+     */
+    float edge =
+      smoothstep(0.0, 0.16, vJUv.x) * smoothstep(1.0, 0.84, vJUv.x) *
+      smoothstep(0.0, 0.1, vJUv.y) * smoothstep(1.0, 0.72, vJUv.y);
+    if (edge < 0.01) discard;
+
+    gl_FragColor = vec4(uStone * shade, edge);
+  }
+`
+
+function JaaliScreen() {
+  const screen = useRef<THREE.Mesh>(null)
+  const glow = useRef<THREE.Mesh>(null)
+
+  const { material, glowMaterial } = useMemo(
+    () => ({
+      material: new THREE.ShaderMaterial({
+        vertexShader: jaaliVert,
+        fragmentShader: jaaliFrag,
+        uniforms: {
+          uReveal: { value: 0 },
+          // Fine, not chunky. Every procedural pattern in this project has come
+          // out several times too coarse on the first attempt; real jaali is
+          // cut in dozens of cells across a window, not a handful.
+          uFreq: { value: 13 },
+          uStone: { value: new THREE.Color('#120a04') },
+        },
+        side: THREE.DoubleSide,
+        transparent: true,
+        depthWrite: false,
+      }),
+      // what the light through the lattice actually is
+      glowMaterial: new THREE.ShaderMaterial({
+        vertexShader: jaaliVert,
+        fragmentShader: /* glsl */ `
+          precision highp float;
+          varying vec2 vJUv;
+          uniform float uFade;
+          uniform vec3 uWarm;
+          void main() {
+            vec2 d = vJUv - vec2(0.5, 0.34);
+            float g = 1.0 - smoothstep(0.0, 0.62, length(d * vec2(1.0, 1.5)));
+            gl_FragColor = vec4(uWarm * g * uFade, g * uFade);
+          }
+        `,
+        uniforms: {
+          uFade: { value: 0 },
+          // brighter than feels reasonable on paper — it is only ever seen
+          // through a few per cent of open lattice
+          uWarm: { value: new THREE.Color('#ffa33d') },
+        },
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false,
+      }),
+    }),
+    [],
+  )
+
+  useFrame(() => {
+    if (film.on.prithvi === 0) return
+    const p = film.p.prithvi
+    const rise = smootherstep(0.0, 0.3, p)
+    material.uniforms.uReveal.value = rise
+    glowMaterial.uniforms.uFade.value = rise * 1.5 * (1 - smoothstep(0.9, 1, p))
+    if (screen.current) screen.current.visible = rise > 0.002
+    if (glow.current) glow.current.visible = rise > 0.002
+  })
+
+  return (
+    <group position={[0, 3.4, -PILLAR_SPREAD - 3.4]}>
+      <mesh ref={glow} material={glowMaterial} position={[0, 0, -1.4]} visible={false}>
+        <planeGeometry args={[20, 9]} />
+      </mesh>
+      <mesh ref={screen} material={material} visible={false}>
+        <planeGeometry args={[17, 7.4]} />
+      </mesh>
     </group>
   )
 }
@@ -490,6 +631,8 @@ function Names() {
 export default function Prithvi() {
   return (
     <>
+      {/* the palace the mandap stands in — see the note above JaaliScreen */}
+      <JaaliScreen />
       <Mandap />
       <Mehndi />
       <Rangoli />
