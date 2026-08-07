@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 import { REGION_OF, type Region } from '@/lib/content'
-import { film } from '@/lib/film'
+import { KNOT, film } from '@/lib/film'
 import { goldMaterial } from '@/lib/gold'
 import { lerp, smootherstep } from '@/lib/math'
 import { patterns } from '@/lib/shaders/patterns'
@@ -21,7 +21,7 @@ import { patterns } from '@/lib/shaders/patterns'
  * forever behind two tori, which is exactly the point.
  * -------------------------------------------------------------------------- */
 
-const R = 1.0
+const { R, tube: TUBE, split: SPLIT } = KNOT
 
 export default function Gathbandhan() {
   const ringA = useRef<THREE.Mesh>(null)
@@ -29,7 +29,7 @@ export default function Gathbandhan() {
   const group = useRef<THREE.Group>(null)
 
   const { geometry, matA, matB } = useMemo(() => {
-    const geometry = new THREE.TorusGeometry(R, 0.115, film.lowEnd ? 14 : 20, film.lowEnd ? 64 : 112)
+    const geometry = new THREE.TorusGeometry(R, TUBE, film.lowEnd ? 14 : 20, film.lowEnd ? 64 : 112)
 
     /**
      * Each band is engraved with its own household's pattern — leheriya on one,
@@ -41,7 +41,25 @@ export default function Gathbandhan() {
      * into colour. Engraved gold is gold everywhere; what changes across a
      * chased surface is how wide the highlight spreads, and colouring it
      * instead would give us two rings with stickers on them.
+     *
+     * ── on scale, which this got wrong twice ──
+     *
+     * Torus UV is not a square sheet. u runs the major circle, 2πR ≈ 6.28 world
+     * units of it; v runs the tube, 2πr ≈ 0.72. That is a **ratio of R/r ≈ 8.7
+     * to one**, so a pattern sampled on raw uv is stretched around the ring and
+     * crushed across the tube by that factor. The tube coordinate has to be
+     * scaled by exactly r/R to put the cells back on square — anything else is
+     * an aspect bug wearing a magic number.
+     *
+     * And the frequency was low enough that the band pitch came out near the
+     * tube's own diameter, which does not read as chasing. It reads as a
+     * barber's pole. Pitch is now about 0.09 world units — roughly a tenth of
+     * the tube's circumference, which is the scale goldwork is actually chased
+     * at, and fine enough that the eye takes it as surface rather than as
+     * stripes.
      */
+    const ASPECT = TUBE / R // r/R — puts the pattern cells back on square
+    const CHASE = 92.0
     const engrave = (region: Region) => {
       const m = goldMaterial({ roughness: 0.13, envMapIntensity: 1.35 })
       m.userData.uniforms = {
@@ -65,14 +83,26 @@ export default function Gathbandhan() {
           .replace(
             '#include <roughnessmap_fragment>',
             `#include <roughnessmap_fragment>
-             // torus uv: x runs the major circle, y the tube
+             // torus uv: x runs the major circle, y the tube. y is scaled by
+             // r/R so a cell is as wide as it is tall in world space.
+             vec2 puv = vRingUv * vec2(1.0, ${ASPECT.toFixed(4)});
              float own = uRegion < 0.5
-               ? leheriya(vRingUv * vec2(1.0, 0.35), 26.0, 0.7)
-               : butti(vRingUv * vec2(1.0, 0.3), 14.0);
-             // the shared chase both bands become
-             float shared = leheriya(vRingUv * vec2(1.0, 0.3), 34.0, 0.0);
+               ? leheriya(puv, ${CHASE.toFixed(1)}, 0.7)
+               : butti(puv, 30.0);
+             // the shared chase both bands become — one spiral, not two grids
+             float shared = leheriya(puv, ${CHASE.toFixed(1)}, 0.28);
              float cut = mix(own, shared, uUnify);
-             roughnessFactor = mix(roughnessFactor, 0.42, cut * 0.8);`,
+
+             // Chasing this fine has to *vanish* rather than alias once the
+             // band pitch falls under a pixel — on a 390px phone the ring is a
+             // third the size it is here. A moiré shimmer crawling over a
+             // wedding ring is far worse than a plain gold one.
+             float perPixel = fwidth(vRingUv.x) * ${CHASE.toFixed(1)};
+             cut *= 1.0 - smoothstep(0.22, 0.55, perPixel);
+
+             // a gentle swing: engraving widens the highlight, it does not
+             // paint matte stripes. 0.13 → 0.25 is about a stop of gloss.
+             roughnessFactor = mix(roughnessFactor, 0.30, cut * 0.7);`,
           )
       }
       return m
@@ -102,11 +132,11 @@ export default function Gathbandhan() {
     const free = 1 - lock
 
     if (ringA.current) {
-      ringA.current.position.x = lerp(-3.4, -R * 0.5, close)
+      ringA.current.position.x = lerp(-3.4, -SPLIT, close)
       ringA.current.rotation.set(t * 0.9 * free, t * 0.55 * free, 0)
     }
     if (ringB.current) {
-      ringB.current.position.x = lerp(3.4, R * 0.5, close)
+      ringB.current.position.x = lerp(3.4, SPLIT, close)
       // settles into the plane perpendicular to A — the linked configuration
       ringB.current.rotation.set(
         lerp(-t * 0.7, Math.PI / 2, lock),

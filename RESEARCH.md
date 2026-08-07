@@ -249,3 +249,62 @@ preference. Confidence Medium on the latter, stated as such.
 
 **Ask the pandit:** whether this family's kund is brick-built on site or a metal
 vessel.
+
+---
+
+## 9 · गठबंधन — the knot itself
+
+**High** on what the rite is. **Medium** on the knot's exact contents.
+
+*गठ* is knot, *बंधन* is tying. The bride's dupatta (or the end of her saree) is
+knotted to the groom's patka / angavastram — his stole. Sources are consistent
+and unambiguous:
+
+- **It is cloth, not metal.** The rite is two garments tied together.
+- **The groom's sister ties it.** Not the pandit and not the couple. The point
+  is that the groom's whole family accepts the bride, so the knot is made by his
+  side of the family rather than by him.
+- **Something is tied inside it.** Most sources give five: a coin, a flower,
+  rice, turmeric, and दूर्वा (Bermuda grass). Several add betel nut and leaf.
+  Each is read plainly — the coin that what is earned is shared, rice that
+  neither goes hungry, durva that both stay green.
+- **In North India it comes *before* the saptapadi**, so that the couple takes
+  those steps already tied and neither can walk them alone.
+
+### Two deliberate departures, both flagged
+
+**The film shows metal, not cloth.** The finale is two gold bands that interlock
+— not a knotted dupatta. Rings are a Western wedding image and this is not the
+rite. What makes it defensible rather than sloppy is what is *on* the bands:
+each carries its own household's **textile** — leheriya for Rajasthan, the
+Banarasi butti for Awadh — so the cloth is still the thing being joined, and
+they resolve into one shared chase as they lock. It is an abstraction, and it is
+being recorded here as one.
+
+**The film puts it last.** In practice gathbandhan precedes the saptapadi; here
+it follows Agni and closes the film. That is a dramatic choice — the elements
+run subtle to gross and the knot is the resolution — not a claim about order.
+The captions do not assert any sequence.
+
+### On the engraving scale — a geometry bug, not a taste call
+
+Torus UV is not a square sheet. `u` spans 2πR ≈ 6.28 world units, `v` spans
+2πr ≈ 0.72 — **a ratio of 8.7:1**. The pattern was sampled with the tube
+coordinate scaled by 0.35, roughly 3× off from the r/R the geometry actually
+demands, so cells came out squashed across the tube and stretched around the
+ring. Combined with a band pitch close to the tube's own diameter, it read as a
+barber's pole rather than as chasing. Now scaled by exactly r/R, at a pitch of
+about 0.09 world units, and faded out by screen-space derivative before the
+bands can alias on a phone.
+
+Sources: [The Daily Jagran — significance of gathbandhan](https://www.thedailyjagran.com/spiritual/what-is-the-significance-of-gathbandhan-in-hindu-wedding-shastras-explain-10171343) ·
+[Mangal Parinay — the gathbandhan ritual](https://www.mangalparinay.com/blog/wedding-traditions-rituals/significance-of-gathbandhan-ritual) ·
+[Brajamandala — gaanth bandhan](https://brajamandala.com/knot-of-destiny-inside-the-spiritual-bond-created-by-gaanth-bandhan-at-indian-weddings/) ·
+[99Pandit — gath bandhan vidhi](https://99pandit.com/blog/pandit-for-gath-bandhan-puja/)
+
+**Note:** these are wedding-service and devotional sites, not scholarship. They
+agree closely on the rite and on who ties it; they vary on the knot's contents,
+which is why that line is Medium.
+
+**Ask the pandit:** what this family puts in the knot, and whether the groom's
+sister ties it here. If we ever caption the contents, the list has to be theirs.
