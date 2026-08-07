@@ -31,12 +31,52 @@ const BELL_PARTIALS = [
   { ratio: 5.63, gain: 0.08, decay: 0.45 },
 ]
 
+/**
+ * राग भैरवी, in **just intonation** rather than in twelve equal steps.
+ *
+ * Bhairavi is the all-komal raga — every swara that can be flat, is — and it is
+ * the piece a Hindustani concert traditionally closes with. So it belongs on
+ * the knot and nowhere earlier.
+ *
+ * The tuning is not a detail. Indian classical music is sung and played against
+ * a fixed drone, and these intervals are small whole-number ratios *because*
+ * that is what stops a held note beating against it. Equal temperament would
+ * put komal re 7 cents sharp of 16/15 and the phrase would sour against the
+ * tanpura underneath. Every one of these is exact.
+ *
+ *   S  1/1     r  16/15    g  6/5     m  4/3
+ *   P  3/2     d  8/5      n  9/5     Ṡ  2/1
+ */
+export const BHAIRAVI = [1, 16 / 15, 6 / 5, 4 / 3, 3 / 2, 8 / 5, 9 / 5, 2]
+
+/**
+ * One breath. Indices into BHAIRAVI, and seconds.
+ *
+ * It climbs to d, the highest note it touches, and then falls all the way home
+ * to Sa and stays there — which is what a closing phrase in Bhairavi does, and
+ * is the shape of the act it plays under.
+ */
+export const PHRASE: ReadonlyArray<readonly [number, number]> = [
+  [4, 0.9], // P
+  [3, 0.5], // m
+  [2, 0.55], // g
+  [3, 0.45], // m
+  [4, 1.0], // P
+  [5, 0.5], // d — the turn
+  [4, 0.6], // P
+  [2, 0.7], // g
+  [1, 0.55], // r
+  [0, 1.7], // S — home, and held
+]
+
 export class Sound {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
   private droneGain: GainNode | null = null
   private droneNodes: OscillatorNode[] = []
   private noiseBuffer: AudioBuffer | null = null
+  /** A shehnai phrase is a *breath*. It cannot be interrupted by another one. */
+  private shehnaiUntil = 0
 
   get ready() {
     return this.ctx !== null && this.ctx.state === 'running'
@@ -208,6 +248,46 @@ export class Sound {
     }
   }
 
+  /**
+   * शहनाई — the auspicious instrument, and the sound a North Indian wedding is
+   * unmistakable by.
+   *
+   * Built rather than sampled, like everything else here, and built around the
+   * three things that actually make a shehnai sound like one:
+   *
+   * **मींड.** The pitch *travels* between notes. A shehnai has no frets, keys
+   * or stops — it is a conical double-reed pipe with open finger holes, and the
+   * player slides between swaras rather than stepping. So this is one
+   * oscillator for the whole phrase whose frequency is ramped, not ten notes
+   * played in sequence. Retriggering per note is the single thing that would
+   * make it read as a synthesiser imitating a shehnai.
+   *
+   * **The formants.** A double reed is harmonically rich and *nasal*, and the
+   * nasality is a pair of fixed resonances the bore imposes regardless of which
+   * note is sounding. Two bandpasses, parked and never swept.
+   *
+   * **आंदोलन.** The vibrato opens as a note is held rather than sitting at a
+   * constant depth — a player leans into a sustained swara. Depth is scheduled
+   * per note, and the long ones get more of it.
+   *
+   * Tuned to the drone that is already running, because that is the ensemble:
+   * research is consistent that a second shehnai holds the tonic in place of a
+   * tanpura. `startDrone()` roots at G2, so Sa here is G4.
+   */
+  shehnai(strength = 1, tonic = 392) {
+    if (!this.ctx || !this.master) return
+    // one breath at a time — a second phrase over the first is two players
+    if (this.ctx.currentTime < this.shehnaiUntil) return
+    this.shehnaiUntil = renderShehnai(
+      this.ctx,
+      this.master,
+      this.ctx.currentTime + 0.02,
+      strength,
+      tonic,
+      this.noiseBuffer ?? undefined,
+    )
+  }
+
   /** Swell the drone — Agni gets more of it than Jal does. */
   setIntensity(v: number) {
     if (!this.ctx || !this.droneGain) return
@@ -238,8 +318,17 @@ export class Sound {
       case 'mandap':
         this.bell(0.5, 262)
         break
+      /**
+       * The shehnai plays here and nowhere else.
+       *
+       * It is a मंगल वाद्य and it belongs at the wedding itself, not scattered
+       * over the elements as texture — and Bhairavi is what a performance
+       * closes on, so the closing act is the one place the raga is also
+       * correct. Restraint is the authentic choice as well as the tasteful one.
+       */
       case 'knot':
         this.bell(1, 196)
+        this.shehnai(1)
         break
       // the folio: paper, not ceremony — quieter than anything in the film
       case 'folio':
@@ -250,6 +339,132 @@ export class Sound {
         break
     }
   }
+}
+
+/**
+ * The shehnai graph, built against any BaseAudioContext so it can be rendered
+ * offline and *measured* — see scripts/verify-shehnai.mjs. A sound nobody can
+ * check is a sound nobody can fix.
+ *
+ * Returns the time the phrase finishes.
+ */
+export function renderShehnai(
+  ctx: BaseAudioContext,
+  dest: AudioNode,
+  at: number,
+  strength = 1,
+  tonic = 392,
+  noise?: AudioBuffer,
+): number {
+  const peak = 0.055 * strength
+
+  // the reed: a sawtooth is the right source for a double reed, which is rich
+  // in *both* odd and even harmonics — a square would give a clarinet
+  const osc = ctx.createOscillator()
+  osc.type = 'sawtooth'
+
+  // आंदोलन, scheduled per note below
+  const vib = ctx.createOscillator()
+  vib.type = 'sine'
+  vib.frequency.value = 5.4
+  const vibAmt = ctx.createGain()
+  vibAmt.gain.value = 0
+  vib.connect(vibAmt)
+  vibAmt.connect(osc.detune) // cents
+
+  // the bore's two fixed resonances, plus a dulled direct path for body
+  const mix = ctx.createGain()
+  const f1 = ctx.createBiquadFilter()
+  f1.type = 'bandpass'
+  f1.frequency.value = 1150
+  f1.Q.value = 3.5
+  const f2 = ctx.createBiquadFilter()
+  f2.type = 'bandpass'
+  f2.frequency.value = 2750
+  f2.Q.value = 5
+  const g2 = ctx.createGain()
+  g2.gain.value = 0.42
+  const lp = ctx.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.frequency.value = 4200
+  lp.Q.value = 0.7
+  const g3 = ctx.createGain()
+  g3.gain.value = 0.5
+
+  osc.connect(f1).connect(mix)
+  osc.connect(f2).connect(g2).connect(mix)
+  osc.connect(lp).connect(g3).connect(mix)
+
+  const env = ctx.createGain()
+  env.gain.value = 0.0001
+  mix.connect(env).connect(dest)
+
+  // the air a reed player is actually pushing — quiet, but its absence is
+  // audible as "synthetic" even when nobody can say why
+  let breath: AudioBufferSourceNode | null = null
+  if (noise) {
+    breath = ctx.createBufferSource()
+    breath.buffer = noise
+    breath.loop = true
+    const hp = ctx.createBiquadFilter()
+    hp.type = 'highpass'
+    hp.frequency.value = 1800
+    const bg = ctx.createGain()
+    bg.gain.value = 0.06
+    breath.connect(hp).connect(bg).connect(env)
+  }
+
+  let t = at
+  let prev = tonic * BHAIRAVI[PHRASE[0][0]]
+  osc.frequency.setValueAtTime(prev, t)
+
+  for (let i = 0; i < PHRASE.length; i++) {
+    const [deg, dur] = PHRASE[i]
+    const f = tonic * BHAIRAVI[deg]
+
+    if (i === 0) {
+      // a reed speaks quickly, but it does not click
+      env.gain.setValueAtTime(0.0001, t)
+      env.gain.exponentialRampToValueAtTime(peak, t + 0.14)
+    } else {
+      /**
+       * The meend, and the breath pulse that articulates it. The dip is what
+       * separates two swaras inside one continuous breath — without it the
+       * phrase is a siren, with a hard gate it is ten separate notes.
+       *
+       * Both parameters are **anchored first**, and that is not defensive
+       * coding. A Web Audio ramp interpolates from the previous scheduled
+       * event's *end time*, not from the moment the ramp is written — so
+       * ramping without an anchor at `t` glides across the whole of the
+       * preceding note instead of across 100ms of it. The offline gate in
+       * lib/debug.ts caught exactly that: every swara was landing up to 133
+       * cents off because none of them was ever actually held.
+       */
+      osc.frequency.setValueAtTime(prev, t)
+      osc.frequency.exponentialRampToValueAtTime(f, t + 0.1)
+      env.gain.setValueAtTime(peak, t)
+      env.gain.exponentialRampToValueAtTime(peak * 0.6, t + 0.035)
+      env.gain.exponentialRampToValueAtTime(peak, t + 0.13)
+    }
+    prev = f
+
+    vibAmt.gain.setValueAtTime(1.5, t)
+    vibAmt.gain.linearRampToValueAtTime(dur > 0.7 ? 17 : 7, t + dur * 0.9)
+
+    t += dur
+  }
+
+  env.gain.exponentialRampToValueAtTime(0.0001, t + 0.6)
+
+  const end = t + 0.7
+  osc.start(at)
+  vib.start(at)
+  osc.stop(end)
+  vib.stop(end)
+  breath?.start(at)
+  breath?.stop(end)
+
+  return end
 }
 
 export const sound = new Sound()

@@ -19,6 +19,8 @@
  */
 import * as THREE from 'three'
 
+import { BHAIRAVI, PHRASE, renderShehnai } from './sound'
+
 import { film } from './film'
 
 /**
@@ -182,5 +184,106 @@ export function installHarness(deps: HarnessDeps) {
     }
   }
 
+  api.shehnai = verifyShehnai
+
   return api
+}
+
+/**
+ * Normalised autocorrelation. Returns the strongest periodicity in `data`
+ * between `minF` and `maxF`, which for a pitched tone is its fundamental.
+ *
+ * The search is bounded to the phrase's own range rather than to the audible
+ * one, because a sawtooth's second partial correlates nearly as well as its
+ * first and an unbounded search cheerfully reports every note an octave high.
+ */
+function estimateF0(data: Float32Array, sampleRate: number, minF = 300, maxF = 760) {
+  const minLag = Math.floor(sampleRate / maxF)
+  const maxLag = Math.ceil(sampleRate / minF)
+  let best = -Infinity
+  let bestLag = minLag
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    let s = 0
+    let a = 0
+    let b = 0
+    for (let i = 0; i + lag < data.length; i++) {
+      s += data[i] * data[i + lag]
+      a += data[i] * data[i]
+      b += data[i + lag] * data[i + lag]
+    }
+    const r = s / Math.sqrt(a * b + 1e-12)
+    if (r > best) {
+      best = r
+      bestLag = lag
+    }
+  }
+  return sampleRate / bestLag
+}
+
+/**
+ * Render the shehnai phrase offline and *measure* it — the audio equivalent of
+ * capturing a frame and actually looking at it.
+ *
+ * Checks the thing that is worth checking: that every swara lands on its just
+ * ratio against the tonic. A phrase can be inaudibly wrong — a note a comma
+ * sharp, an octave error in a ratio, a typo in the scale table — and no amount
+ * of listening on laptop speakers will localise it. This will.
+ *
+ *   await __film.shehnai()
+ */
+export async function verifyShehnai(tonic = 392) {
+  const Ctor =
+    window.OfflineAudioContext ??
+    (window as unknown as { webkitOfflineAudioContext: typeof OfflineAudioContext })
+      .webkitOfflineAudioContext
+  if (!Ctor) return { ok: false, reason: 'no OfflineAudioContext' }
+
+  const rate = 44100
+  const total = PHRASE.reduce((s, n) => s + n[1], 0) + 2
+  const ctx = new Ctor(1, Math.ceil(total * rate), rate)
+
+  // the same noise the live class builds, so breath is in the measurement too
+  const noise = ctx.createBuffer(1, Math.floor(rate * 0.4), rate)
+  const nd = noise.getChannelData(0)
+  for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1
+
+  const at = 0.05
+  renderShehnai(ctx, ctx.destination, at, 1, tonic, noise)
+  const buf = await ctx.startRendering()
+  const pcm = buf.getChannelData(0)
+
+  let peak = 0
+  for (let i = 0; i < pcm.length; i++) peak = Math.max(peak, Math.abs(pcm[i]))
+
+  const notes: Array<Record<string, unknown>> = []
+  let t = at
+  let worst = 0
+  for (const [deg, dur] of PHRASE) {
+    // skip the meend at the head of the note and stop before the next one
+    const from = Math.floor((t + 0.22) * rate)
+    const to = Math.min(Math.floor((t + Math.min(dur, 0.42)) * rate), pcm.length)
+    if (to - from > 1024) {
+      const f0 = estimateF0(pcm.slice(from, to), rate)
+      const want = tonic * BHAIRAVI[deg]
+      const cents = 1200 * Math.log2(f0 / want)
+      worst = Math.max(worst, Math.abs(cents))
+      notes.push({
+        swara: ['S', 'r', 'g', 'm', 'P', 'd', 'n', "S'"][deg],
+        want: +want.toFixed(1),
+        got: +f0.toFixed(1),
+        cents: +cents.toFixed(1),
+      })
+    }
+    t += dur
+  }
+
+  return {
+    // 25 cents is an eighth of a tone. The vibrato alone is ±17 cents by the
+    // end of a long note, so anything tighter would be measuring the andolan.
+    ok: peak > 0.01 && peak < 1 && worst < 25,
+    peak: +peak.toFixed(4),
+    worstCents: +worst.toFixed(1),
+    seconds: +total.toFixed(2),
+    notes,
+  }
 }

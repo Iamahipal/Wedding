@@ -308,3 +308,70 @@ which is why that line is Medium.
 
 **Ask the pandit:** what this family puts in the knot, and whether the groom's
 sister ties it here. If we ever caption the contents, the list has to be theirs.
+
+---
+
+## 10 · शहनाई — the auspicious instrument
+
+**High** on the instrument, its role, and its ensemble. **The choice of raga is
+the film's, and is flagged as such.**
+
+A double-reed aerophone: conical wooden bore, seven or so open finger holes,
+flared metal bell. Descended from the Persian *surna*. It is one of the
+**मंगल वाद्य**, the auspicious instruments — the northern counterpart to the
+nadaswaram of the south — and its sound is held to create and sustain
+auspiciousness, which is why it belongs to weddings, processions and temples
+rather than to concert halls.
+
+**It is made in Varanasi**, which matters here: the bride's side of this film is
+Awadh, and Banaras is the instrument's home. Ustad Bismillah Khan founded the
+Banaras gharana for it and carried it from ceremonial playing into classical
+performance.
+
+**The ensemble is the finding that changed the patch.** Sources are consistent
+that in ceremonial playing a **second shehnai holds a continuous drone in place
+of a tanpura** — the *sur* — with duggi or kurdak (small drums) and sur peti
+alongside. The film already runs a tanpura-ish drone rooted at G2, so the
+melody is tuned to *it*: Sa is G4. The instrument is not dropped on top of the
+mix, it is placed in the ensemble that already exists.
+
+### राग भैरवी, and what is and is not claimed
+
+Bhairavi is the all-komal raga — every swara that can be flat, is — and it is
+the piece a Hindustani performance conventionally **closes** with. It is also
+the raga most bound to the shehnai and to Bismillah Khan.
+
+**What I could not establish:** that any particular raga is *prescribed* for
+weddings. Sources tie Bhairavi to the shehnai, to Bismillah Khan and to closing
+a concert; none of them says "this is the wedding raga". So Bhairavi is here
+because the film's last act is a closing, not because a rule requires it. That
+is a defensible artistic choice and it is being recorded as a choice.
+
+**Tuning is not decoration.** The scale is in **just intonation**, not twelve
+equal steps — S 1/1, r 16/15, g 6/5, m 4/3, P 3/2, d 8/5, n 9/5. These are small
+whole-number ratios precisely because the music is played against a fixed drone
+and that is what stops a held note beating against it. Equal temperament would
+put komal re about 7 cents sharp of 16/15.
+
+**Verified by measurement, not by ear.** `lib/debug.ts` renders the phrase
+through an OfflineAudioContext and estimates each swara's fundamental by
+autocorrelation (`await __film.shehnai()`). It caught a real defect on the first
+run: every note was landing up to **133 cents** off, because a Web Audio ramp
+interpolates from the previous scheduled event's *end time* — so each pitch was
+gliding across the whole of the preceding note instead of across 100ms of it.
+The phrase was one continuous siren. Anchored, all ten swaras now land within
+7.7 cents, which is the autocorrelation's own quantisation floor at these
+frequencies rather than a pitch error.
+
+**Still synthesised, not recorded.** Nothing is fetched anywhere in this film,
+so no licence question is ever raised. A real shehnai carries what synthesis
+cannot, and `lib/sound.ts` says so at the top — the swap point is one function.
+
+Sources: [Britannica — shehnai](https://www.britannica.com/art/shehnai) ·
+[Scroll.in — the shehnai fighting for survival](https://scroll.in/magazine/1031919/neither-embraced-at-concerts-nor-at-weddings-the-shehnai-is-fighting-for-survival) ·
+[ipassio — shehnai, history and parts](https://www.ipassio.com/wiki/musical-instruments/woodwind/Shehnai) ·
+[Rāga Junglism — Bhairavi](https://ragajunglism.org/ragas/bhairavi/) ·
+[Bhairavi (Hindustani) — Wikipedia](https://en.wikipedia.org/wiki/Bhairavi_(Hindustani))
+
+**Ask the family:** whether there will be live shehnai, and whether anyone has a
+recording of their own players. A real one would be better than this.
