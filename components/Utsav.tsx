@@ -1,4 +1,5 @@
 import Devanagari from './Devanagari'
+import Birds from './utsav/Birds'
 import Countdown from './utsav/Countdown'
 import UtsavDefs from './utsav/Defs'
 import Frame from './utsav/Frame'
@@ -49,6 +50,11 @@ export default function Utsav() {
 
       {/* ── the doors open ─────────────────────────────────────────────── */}
       <section className="utsav-section u-open" aria-labelledby="u-names">
+        {/* The threshold above the invocation is a screenful of empty sandalwood
+            sky — which is exactly where a flight of सारस belongs, and it gives
+            the handoff's quiet stretch something alive in it. */}
+        <Birds count={5} duration={38} className="u-birds--open" />
+
         <div className="utsav-inner">
           <div data-reveal className="u-invocation">
             <Devanagari name="ganesha" height="clamp(0.95rem, 3.2vw, 1.25rem)" />

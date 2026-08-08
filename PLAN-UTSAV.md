@@ -116,13 +116,34 @@ Trap 18.
 | lightbox | opens at the clicked index, arrows step, Escape closes, focus returns |
 | 390 × 844 portrait | all thirteen sections shot and read |
 
+### Added after the plan: सारस, and the marigolds bloom
+
+Neither is in the references — I checked demo 1's layer tree and the only motion
+on the whole page is two fade keyframes and the confetti. So these are the thing
+that puts this past it rather than level with it.
+
+**The cranes** cross the sky above the invocation and above विदाई, where a
+departure at first light is the panel's actual subject. Sarus, because it mates
+for life and is अवध's own bird. Drawn from below — in profile it comes out as a
+delta-wing aircraft — and flying on time rather than on scroll, for the same
+reason the camera breathes.
+
+**The marigolds** are the arches' own shape rule swept through a full turn, and
+they bloom on a stagger as each garland arrives.
+
+No assets were downloaded for either, and none are needed.
+
 ### Not built, on purpose
 
-**The marigold petals.** §6 offers them as what I would spend the references'
-confetti interaction on — but the confetti is not being built either, the build
-phases never listed them, and they were not in the feature set you picked. A
-second particle system is not a footnote. Say the word and it is a small,
-self-contained addition.
+**The marigold petals falling.** §6 offers them as what I would spend the
+references' confetti interaction on — but the confetti is not being built
+either, the build phases never listed them, and they were not in the feature set
+you picked. A second particle system is not a footnote. Say the word and it is a
+small, self-contained addition.
+
+**An event slideshow and a photo slider.** The references have both; ours are
+static panels and a static frame. Worth doing once there are photographs to put
+in them, and pointless before.
 
 ---
 

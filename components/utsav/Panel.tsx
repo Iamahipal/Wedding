@@ -1,4 +1,5 @@
 import Devanagari from '../Devanagari'
+import Birds from './Birds'
 import Frame from './Frame'
 import { REGION_OF, type Celebration } from '@/lib/content'
 
@@ -40,6 +41,12 @@ export default function Panel({ c, index, total }: PanelProps) {
       aria-labelledby={`fn-${c.key}`}
     >
       <div className="u-texture" aria-hidden="true" />
+
+      {/* विदाई only. The bride leaves her parents' house at first light, and a
+          flight of cranes going with her is the one place on this site where an
+          ornament is doing the panel's actual work rather than decorating it.
+          Anywhere else it would be a bird on a wedding website. */}
+      {c.key === 'vidaai' && <Birds count={7} duration={46} className="u-birds--vidaai" />}
 
       <div className="utsav-inner">
         {/* Latin numerals: this is UI, not liturgy — the same call the folio

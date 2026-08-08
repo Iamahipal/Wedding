@@ -180,6 +180,35 @@ eleven foils cross along both shoulders — गठबंधन, in 2D.
 A function with no photograph yet draws its vocabulary's motif and its own name
 instead. That is a designed state, not a hole.
 
+### सारस, and the marigolds
+
+Two pieces of ornament that move, both generated, neither downloaded.
+
+**The cranes.** Sarus — it mates for life, it is the North Indian emblem of
+exactly that, and it is the state bird of Uttar Pradesh, which is अवध, which is
+the bride's side. Drawn *from below*, which is the whole problem: in profile,
+with the wings swept back from the shoulder, this comes out as a delta-wing
+aircraft no matter how the curves are tuned. A bird in the sky is seen from
+underneath, wings square to the body. The other tell is proportion — the legs
+trail 72 units behind the shoulder while the neck reaches 62 in front, and that
+inequality is the only thing separating a crane from any other bird.
+
+They fly on **time, not scroll**, which is the same argument `cameraBreath` makes
+in `lib/film.ts`: a thing that only moves while a thumb is moving stops dead the
+moment somebody pauses to read. No JavaScript — two keyframes and periods that
+do not divide into one another.
+
+**The marigolds** are `rosette()` in `lib/ornament.ts`: the same polar modulation
+the arches are generated from, swept through a full turn instead of a half one.
+They bloom on a stagger as each garland arrives.
+
+One trap worth writing down. The initial state is `opacity: 0` and deliberately
+*not* `transform: scale(0)` — a CSS transform on an SVG group resolves against
+the viewBox rather than the group's own bounding box, so `scale(0)` collapsed
+all twenty-six marigolds onto the corner of a 1000×110 viewBox as a single
+orange speck, while GSAP scaled about the bbox centre and disagreed about what
+the shape even was. Opacity has no origin to disagree about.
+
 ### Photographs
 
 Static export means no `next/image` server, so this is decided at build time and

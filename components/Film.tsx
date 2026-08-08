@@ -251,6 +251,38 @@ export default function Film() {
         }
       }
 
+      /* ── the marigolds bloom ─────────────────────────────────────────────
+       * One trigger per garland rather than one for all of them, because a
+       * garland is strung left to right and the stagger has to start where
+       * *that* strip starts. Batched into a single tween per strip so the
+       * whole run is a handful of triggers rather than a few hundred.
+       *
+       * `back.out` is doing something specific: a marigold opening overshoots
+       * and settles, and a plain ease reads as a disc being scaled up by a
+       * computer. It is the same instinct as the folio's "card stock does not
+       * oscillate" — the opposite conclusion, because a flower is not card.
+       * ------------------------------------------------------------------- */
+      for (const strip of document.querySelectorAll<HTMLElement>('.u-garland')) {
+        const flowers = strip.querySelectorAll<SVGGElement>('[data-bloom]')
+        if (!flowers.length) continue
+        if (reduced) {
+          gsap.set(flowers, { scale: 1, opacity: 1 })
+          continue
+        }
+        gsap.fromTo(
+          flowers,
+          { scale: 0, opacity: 0 },
+          {
+            scale: 1,
+            opacity: 1,
+            duration: 0.7,
+            ease: 'back.out(1.7)',
+            stagger: { each: 0.035, from: 'start' },
+            scrollTrigger: { trigger: strip, start: 'top 92%', once: true },
+          },
+        )
+      }
+
       /* ── the folio ───────────────────────────────────────────────────────
        * The card opens itself as it arrives, and that is the *primary* way it
        * opens rather than a flourish on top of hover. Half the people who see

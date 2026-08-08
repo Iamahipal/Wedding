@@ -822,6 +822,122 @@ html[data-film-over] .chrome {
   margin: 0 auto;
 }
 
+/* TRAP 15 again, and it bites here as hard as anywhere: between first paint and
+   hydration there is no GSAP, so a garland that only blooms in the timeline
+   arrives fully strung and *then* blooms, which is worse than never blooming.
+
+   Opacity only, and deliberately *not* `transform: scale(0)`. A CSS transform on
+   an SVG group resolves against the viewBox, not the group's own bounding box,
+   so `scale(0)` collapses every flower onto the corner of the 1000×110 viewBox
+   rather than onto itself — twenty-six marigolds stacked in the top-left as one
+   orange speck. GSAP scales about the bbox centre, so it disagrees with the CSS
+   about what the shape even is. Opacity has no origin to disagree about, and it
+   fails in exactly the same direction: nothing shown. */
+[data-bloom] {
+  opacity: 0;
+}
+
+/* ── सारस — the cranes ───────────────────────────────────────────────────────
+   On time, not on scroll. The whole film is a function of scroll progress and
+   the camera breath in lib/film.ts is the exception that explains why this is
+   another one: a thing that only moves while a thumb is moving stops dead the
+   moment somebody pauses to read, and a bird that hangs motionless in the sky
+   is not a bird, it is a sticker.
+
+   No JavaScript at all. Two keyframes, and periods that do not divide into one
+   another so the flock never falls into a single rhythm.
+   -------------------------------------------------------------------------- */
+.u-birds {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  color: color-mix(in oklab, var(--ink) 34%, transparent);
+}
+
+.u-bird {
+  position: absolute;
+  left: 0;
+  width: clamp(2.6rem, 9vw, 4.2rem);
+  transform: translateX(-30vw) scale(var(--bird-scale, 1));
+  animation: birdCross var(--bird-cross, 34s) linear infinite;
+  animation-delay: var(--bird-cross-delay, 0s);
+  will-change: transform;
+}
+.u-bird svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.u-bird__body,
+.u-bird__wing {
+  fill: currentColor;
+}
+/* Both wings pivot at the shoulder, in *opposite* directions — they close
+   toward each other on the downbeat and open away on the up. Rotating them the
+   same way is what makes a bird look like it is banking rather than flapping,
+   and it was the first thing wrong with this. */
+.u-bird__wing {
+  transform-box: view-box;
+  transform-origin: 74px 55px;
+  animation: birdFlapUp var(--bird-flap, 0.7s) ease-in-out infinite alternate;
+  animation-delay: var(--bird-flap-delay, 0s);
+}
+.u-bird__wing--down {
+  animation-name: birdFlapDown;
+}
+
+@keyframes birdCross {
+  from {
+    transform: translateX(-30vw) translateY(0) scale(var(--bird-scale, 1));
+  }
+  50% {
+    /* cranes do not fly a ruled line; they rise and settle on the air */
+    transform: translateX(35vw) translateY(-2.5vh) scale(var(--bird-scale, 1));
+  }
+  to {
+    transform: translateX(125vw) translateY(1vh) scale(var(--bird-scale, 1));
+  }
+}
+
+@keyframes birdFlapUp {
+  from {
+    transform: rotate(-16deg);
+  }
+  to {
+    transform: rotate(26deg);
+  }
+}
+@keyframes birdFlapDown {
+  from {
+    transform: rotate(16deg);
+  }
+  to {
+    transform: rotate(-26deg);
+  }
+}
+
+/* Confined to the sky, in both places. `inset: 0` would fly them behind the
+   names and the photograph, which is not a flock in the distance — it is a
+   flock in the room. */
+.u-birds--open {
+  bottom: auto;
+  height: clamp(8rem, 30vh, 14rem);
+}
+/* विदाई gets sky above its heading, and the flock is confined to exactly that
+   band. Birds crossing the words are birds in the room; birds above them are
+   birds in the sky, and the panel is about a departure at first light. The
+   extra air is right for the exhale regardless of what is flying through it. */
+[data-fn='vidaai'] {
+  padding-top: clamp(7rem, 22vh, 11rem);
+}
+.u-birds--vidaai {
+  bottom: auto;
+  height: clamp(7rem, 22vh, 11rem);
+  color: color-mix(in oklab, var(--ink) 42%, transparent);
+}
+
 /* ── inside a function panel ─────────────────────────────────────────────── */
 
 .u-index {
@@ -1353,6 +1469,32 @@ html[data-film-over] .chrome {
   }
   [data-motion-only] {
     display: none;
+  }
+
+  /* The garland is still strung, the cranes are still in the sky — they simply
+     stop. Ornament is the one place where "present it, just do not move it" is
+     unambiguously right: nothing is being communicated by the motion that is
+     not already there in the picture. */
+  [data-bloom] {
+    opacity: 1;
+  }
+  .u-bird {
+    /* Parked in formation across the frame, rather than stacked at the left
+       edge where the crossing happens to start. The flock is still a flock and
+       still a skein; it has simply stopped, which for pure ornament is the
+       whole of what this branch owes anybody. */
+    animation: none;
+    left: var(--bird-x, 20%);
+    transform: scale(var(--bird-scale, 1));
+  }
+  .u-bird__wing {
+    animation: none;
+  }
+  .u-bird__wing--up {
+    transform: rotate(4deg);
+  }
+  .u-bird__wing--down {
+    transform: rotate(-4deg);
   }
 
   /* The folio still opens, still presents, still returns — it just stops

@@ -117,6 +117,89 @@ export function buttiMotif(): string {
 }
 
 /**
+ * A rosette: the same polar modulation as `arch()`, swept through a full turn
+ * instead of a half one.
+ *
+ * That is not a coincidence worth hiding — an arch with its lobes and a
+ * marigold with its petals are the same shape rule at different sweeps, which
+ * is why one function generates both and why the flowers look like they belong
+ * under the arches.
+ */
+export function rosette(petals: number, depth = 0.34, steps = 14): string {
+  const n = petals * steps
+  const pts: string[] = []
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2
+    const m = 1 - depth * (0.5 - 0.5 * Math.cos(petals * a))
+    pts.push(`${r(0.5 + 0.5 * m * Math.cos(a))} ${r(0.5 + 0.5 * m * Math.sin(a))}`)
+  }
+  return `M${pts.join(' L')} Z`
+}
+
+/**
+ * सारस — the sarus crane, in flight, facing right.
+ *
+ * Not a generic bird. The sarus mates for life and is the North Indian emblem
+ * of exactly that; it is also the state bird of Uttar Pradesh, which is अवध,
+ * which is the bride's side of this invitation. Every other mark on this site
+ * is chosen for a reason and this one is not going to be the exception.
+ *
+ * Drawn rather than generated, because a bird is a drawn thing — but drawn at
+ * the size it is read at: a silhouette 40 to 70 pixels across, where the tell
+ * is the *proportion*, the long neck out front and the longer legs trailing
+ * behind. Get that right and it reads as a crane at any distance; get it wrong
+ * and no amount of feather detail rescues it.
+ */
+/**
+ * सारस — the sarus crane, in flight, flying right.
+ *
+ * ── the view is the whole problem ─────────────────────────────────────────
+ * Drawn in profile, with both wings swept back from the shoulder, this comes
+ * out as a delta-wing aircraft. That is not a matter of tuning the curves: a
+ * bird in the sky is seen *from underneath*, and from underneath its wings
+ * reach out square to the body and only sweep back near the tips. Profile is
+ * how a bird is seen standing; the flying silhouette everyone in the world
+ * recognises is the one from below.
+ *
+ * So the body runs along x, the wings reach up and down square to it, and the
+ * flap rotates them toward and away from each other. What makes it a *crane*
+ * rather than a generic bird is the proportion at either end: the neck held
+ * straight out in front, and the legs trailing behind it, longer than the neck.
+ * Nothing else about the shape carries that.
+ */
+export const CRANE = {
+  /** viewBox the paths below are authored in */
+  box: '0 0 150 110',
+  /**
+   * Body, neck, head and beak — a spindle, thickest at the shoulder, ending in
+   * a short head rather than a needle. Run the neck out too far and the bird
+   * stops being a bird and becomes an arrow.
+   */
+  body:
+    'M44 58 C52 53 60 49.5 70 48.5 C78 47.8 85 48.5 92 49.5 ' +
+    'C104 51 116 52.2 126 53.4 L136 54.8 ' +
+    'L126 57 C116 58 104 59 92 60 C84 60.7 76 62 66 62.6 ' +
+    'C56 63 49 61.5 44 58 Z',
+  /**
+   * The legs, trailing.
+   *
+   * They reach 72 units behind the shoulder while the neck reaches 62 in front,
+   * and that inequality is the entire difference between a crane and any other
+   * bird in the sky. Everything else about the silhouette is generic; this is
+   * not.
+   */
+  legs: 'M48 59.8 C38 62 24 64.5 2 67.2 L2 70 C24 67.4 38 65.2 48 63 Z',
+  /** the far wing, reaching up. Drawn first, so it sits behind the body. */
+  wingUp:
+    'M90 50 C78 36 62 20 42 8 C45 20 49 34 54 44 C57 50 59 53 62 54 C72 54.5 82 52.5 90 50 Z',
+  /** the near wing, reaching down */
+  wingDown:
+    'M90 61 C78 75 62 91 42 103 C45 91 49 77 54 67 C57 61 59 58 62 57 C72 56.5 82 58.5 90 61 Z',
+  /** where both wings pivot */
+  shoulder: [74, 55] as const,
+}
+
+/**
  * गेंदा — a marigold garland, as the connective tissue between panels.
  *
  * Flowers on a catenary, because a strung garland hangs; a straight row of
