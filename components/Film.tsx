@@ -5,8 +5,9 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 
-import { ACT_ORDER, ACT_RANGE, emitBeat, film, updateFilm, type ActName } from '@/lib/film'
+import { ACT_ORDER, ACT_RANGE, emitBeat, film, setStage, updateFilm, type ActName } from '@/lib/film'
 import { domRefs } from '@/lib/domRefs'
+import { smoothstep } from '@/lib/math'
 import type { FolioHandle } from './Folio'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -216,25 +217,37 @@ export default function Film() {
        * on the way down — nothing here scrubs, because scrubbing text you are
        * trying to read is an effect at the reader's expense.
        * ------------------------------------------------------------------- */
-      const invite = document.querySelector('[data-invite]')
-      if (invite) {
-        const blocks = Array.from(invite.querySelectorAll<HTMLElement>('[data-reveal]'))
-        if (reduced) {
-          gsap.set(blocks, { opacity: 1, y: 0 })
-        } else {
-          for (const el of blocks) {
-            gsap.fromTo(
-              el,
-              { opacity: 0, y: 24 },
-              {
-                opacity: 1,
-                y: 0,
-                duration: 0.9,
-                ease: 'power2.out',
-                scrollTrigger: { trigger: el, start: 'top 88%', once: true },
-              },
-            )
-          }
+      /**
+       * Both halves, one loop. The celebration's blocks reveal exactly like the
+       * invitation's — the difference between the two halves is colour and
+       * pace, not a second set of motion rules.
+       *
+       * `once: true` matters more down here than it did above. Seven full-bleed
+       * panels means a hundred or so blocks, and a trigger that keeps toggling
+       * is a trigger still doing work on every scroll for the rest of the page.
+       *
+       * TRAP 22 — reduced motion still *presents* every block. The CSS branch
+       * already sets `[data-reveal] { opacity: 1 }`, and this clears the inline
+       * transform so nothing is left offset by a tween that never ran.
+       */
+      const readable = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-invite] [data-reveal], [data-utsav] [data-reveal]'),
+      )
+      if (reduced) {
+        gsap.set(readable, { opacity: 1, y: 0 })
+      } else {
+        for (const el of readable) {
+          gsap.fromTo(
+            el,
+            { opacity: 0, y: 24 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.9,
+              ease: 'power2.out',
+              scrollTrigger: { trigger: el, start: 'top 88%', once: true },
+            },
+          )
         }
       }
 
@@ -285,6 +298,68 @@ export default function Film() {
             },
           )
         }
+
+        /* ── the handoff: the doors open into उत्सव ────────────────────────
+         * The gatefold card is the hinge between the two halves, so this is
+         * the one place in the piece where the film ends and something else
+         * begins. Both things happen on this single scrub:
+         *
+         *   the gold recedes   film.stage 1 → 0, and the canvas stops drawing
+         *   colour arrives     --utsav-in 0 → 1, the celebration's ground
+         *
+         * The two curves are deliberately offset rather than crossfaded. A
+         * straight dissolve would put half-lit gold over half-lit saffron in
+         * the middle, which is the colour of neither half; staggering them
+         * leaves a beat of near-black between the two, and the celebration
+         * lands *out* of the dark rather than through it.
+         *
+         * Offsetting also keeps the section above the card readable while it
+         * is still on screen: --utsav-in does not move at all until the last
+         * three quarters of the zone, by which time everything but the folio
+         * has scrolled off the top.
+         * -------------------------------------------------------------- */
+        const html = document.documentElement
+        const handoff = (p: number) => {
+          /**
+           * The exponent is not a flourish.
+           *
+           * The film's last shot is a bloomed gold knot on black, and bloom is
+           * bright: at a linear 30% opacity it is still unmistakably a glowing
+           * ring, sitting behind the celebration's first colour. Raising the
+           * curve makes "half way through the handoff" actually look half way
+           * through, which a linear crossfade of an HDR image never does.
+           */
+          setStage((1 - smoothstep(0, 0.62, p)) ** 1.8)
+          html.style.setProperty('--utsav-in', smoothstep(0.3, 1, p).toFixed(3))
+          // The film's chrome goes with the film — see `.chrome` in globals.css.
+          // An attribute rather than another number, because what the sound
+          // control needs is to stop being *clickable*, and no amount of
+          // opacity does that.
+          html.toggleAttribute('data-film-over', p > 0.35)
+        }
+
+        ScrollTrigger.create({
+          trigger: folioStage,
+          start: 'bottom 84%',
+          /**
+           * Ends on the invocation, not on the card.
+           *
+           * A range measured entirely against the folio is a range whose length
+           * depends on how tall the folio happens to be, and the thing that
+           * actually has to be true is that the film is dark *before* the first
+           * coloured thing can be read. Anchoring the end on ॐ श्री गणेशाय नमः
+           * states that directly, and `.u-open`'s top padding is what buys the
+           * room for it.
+           */
+          endTrigger: '.u-invocation',
+          end: 'top 58%',
+          onUpdate: (self) => handoff(self.progress),
+          onRefresh: (self) => handoff(self.progress),
+          // onUpdate stops firing once the playhead is outside the range, and
+          // the endpoints are exactly where this has to be right
+          onLeave: () => handoff(1),
+          onLeaveBack: () => handoff(0),
+        })
       }
 
       /* ── the scrub harness ───────────────────────────────────────────────
@@ -324,6 +399,32 @@ export default function Film() {
           const [a, b] = ACT_RANGE[name]
           seek(a + (b - a) * p)
         },
+        /**
+         * Scroll anywhere on the page, including past the end of the film, and
+         * settle every trigger before returning.
+         *
+         * `seek` only reaches the film's own range, which was the whole page
+         * until उत्सव existed. It is not a convenience: ScrollTrigger defers its
+         * work to gsap.ticker, so a plain window.scrollTo in a tab that is not
+         * compositing frames moves the page and updates nothing — the handoff
+         * and every reveal below it stay exactly where they were, and any
+         * measurement taken there reports confident nonsense. Same lesson as
+         * TRAP 18 and the polling ResizeObserver: the harness must not depend on
+         * anybody looking at the tab.
+         */
+        to: (y: number) => {
+          const max = document.documentElement.scrollHeight - window.innerHeight
+          const clamped = Math.max(0, Math.min(y, max))
+          if (lenis) lenis.scrollTo(clamped, { immediate: true, force: true })
+          else window.scrollTo(0, clamped)
+          ScrollTrigger.update()
+          return clamped
+        },
+        /** where a section starts, so `to` can be aimed by name rather than by pixel */
+        top: (selector: string) => {
+          const el = document.querySelector(selector)
+          return el ? Math.round(el.getBoundingClientRect().top + window.scrollY) : null
+        },
       })
 
       /* ── the chrome arrives a beat late ──────────────────────────────────
@@ -346,11 +447,38 @@ export default function Film() {
       w.__triggerCount = ScrollTrigger.getAll().length
       w.__lenis = lenis ? 'lenis' : reduced ? 'native (reduced)' : 'none'
 
+      /* Deep links for the harness. `?t=` scrubs the film; `?at=` aims at a
+         selector anywhere on the page, which is the only way to photograph the
+         celebration in a headless browser — there is no film progress that
+         corresponds to "the हल्दी panel". */
       const params = new URLSearchParams(window.location.search)
       const t0 = params.get('t')
       if (t0 !== null) requestAnimationFrame(() => seek(parseFloat(t0) || 0))
 
       ScrollTrigger.refresh()
+
+      /**
+       * Aimed *after* the refresh, and synchronously.
+       *
+       * `?t=` above defers a frame to let layout settle, which is the obvious
+       * thing to do and is exactly what makes it useless in a headless capture:
+       * a tab that is not being composited never runs a requestAnimationFrame
+       * callback at all, so the deep link silently does nothing and the shot
+       * comes back showing the top of the page. The refresh has already forced
+       * every measurement this needs, so there is nothing left to wait for.
+       */
+      const at = params.get('at')
+      if (at) {
+        const el = document.querySelector(at)
+        if (el) {
+          const y = el.getBoundingClientRect().top + window.scrollY + (Number(params.get('off')) || 0)
+          const max = document.documentElement.scrollHeight - window.innerHeight
+          const clamped = Math.max(0, Math.min(y, max))
+          if (lenis) lenis.scrollTo(clamped, { immediate: true, force: true })
+          else window.scrollTo(0, clamped)
+          ScrollTrigger.update()
+        }
+      }
 
       return () => {
         if (tick) gsap.ticker.remove(tick)

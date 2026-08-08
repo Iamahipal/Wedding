@@ -82,7 +82,16 @@ export default function SoundToggle() {
      * ScrollTrigger run on. A separate rAF loop here would put the bell a frame
      * away from the image that is supposed to have caused it.
      */
+    let presence = -1
     const tick = () => {
+      // The film's audio leaves with the film, and this has to happen above the
+      // early return: beats simply run out, but the drone does not — it would
+      // still be playing under the gallery, with the only control for it faded
+      // out along with the rest of the chrome.
+      if (Math.abs(film.stage - presence) > 0.01) {
+        presence = film.stage
+        sound.setPresence(presence)
+      }
       if (film.beats.length === 0) return
       const beats = film.beats.splice(0, film.beats.length)
       if (!film.audioUnlocked) return // drained and discarded; nothing notices

@@ -2,7 +2,7 @@
 
 import { useFrame } from '@react-three/fiber'
 
-import { film, tickFilm } from '@/lib/film'
+import { film, STAGE_OFF, tickFilm } from '@/lib/film'
 import { domRefs } from '@/lib/domRefs'
 import { smoothstep } from '@/lib/math'
 
@@ -41,6 +41,43 @@ const perf = {
 
 export default function FrameDriver() {
   useFrame((state, delta) => {
+    /* ── the handoff ───────────────────────────────────────────────────────
+     * The film's last frame is not the page's last frame. Once उत्सव owns the
+     * screen the canvas is faded out and then hidden outright — `visibility`
+     * rather than `display`, because zeroing the container's layout size would
+     * take the ResizeObserver R3F depends on with it, and coming back up the
+     * page would find a renderer sized to nothing.
+     *
+     * Everything below this early return is film work. `film.stage` is 0 only
+     * once `setStage` has already blanked `on` for every act, so the acts are
+     * invisible and returning early from their own useFrame; Post has disabled
+     * every composer pass, so the render itself is a no-op loop. What is left
+     * is one style write per frame on a hidden element.
+     * ------------------------------------------------------------------- */
+    const stage = domRefs.stage
+    if (stage) {
+      const v = film.stage
+      const o = v < STAGE_OFF ? '0' : v > 0.999 ? '1' : v.toFixed(3)
+      if (stage.style.opacity !== o) stage.style.opacity = o
+      const vis = v < STAGE_OFF ? 'hidden' : ''
+      if (stage.style.visibility !== vis) stage.style.visibility = vis
+    }
+    // The curtain is DOM, but it is part of the film, so it is written here in
+    // the render loop rather than through React — one clock, one frame.
+    //
+    // Above the early return, and that placement is load-bearing: the curtain
+    // sits at z-30, over everything. `setStage` zeroes `film.curtain` on the way
+    // out, but the *element* only learns about it here, and a driver that
+    // returned first would leave a black sheet lying over the celebration.
+    const el = domRefs.curtain
+    if (el) {
+      const v = film.curtain
+      el.style.opacity = v > 0.001 ? String(v) : '0'
+      if (v > 0.001) el.style.backgroundColor = film.curtainColor
+    }
+
+    if (film.stage < STAGE_OFF) return
+
     tickFilm(Math.min(delta, 1 / 20))
 
     /* ── frame timing, reported only ──────────────────────────────────── */
@@ -51,15 +88,6 @@ export default function FrameDriver() {
       film.quality = state.gl.getPixelRatio()
       perf.acc = 0
       perf.frames = 0
-    }
-
-    // The curtain is DOM, but it is part of the film, so it is written here in
-    // the render loop rather than through React — one clock, one frame.
-    const el = domRefs.curtain
-    if (el) {
-      const v = film.curtain
-      el.style.opacity = v > 0.001 ? String(v) : '0'
-      if (v > 0.001) el.style.backgroundColor = film.curtainColor
     }
 
     // Hard boundary on the captions. A scrubbed tween lags the playhead on

@@ -19,6 +19,15 @@ the viewer scrolls from nothing, through the five elements, and arrives at a uni
 Each act uses a different rendering technique, because each element is a
 different physical thing. The scroll never repeats itself.
 
+Then the gatefold card opens, the canvas goes dark, and colour floods out.
+
+```
+उत्सव   Utsav       the celebration   seven functions, seven palettes, on colour
+```
+
+The film is the five elements. The celebration is the days. They are one idea
+rather than two websites stapled together — see **उत्सव** below.
+
 ---
 
 ## Running it
@@ -35,16 +44,19 @@ npm run dev
 | `npm run build` | static export into `out/` |
 | `npm run devanagari` | re-shape every Devanagari string (see below) |
 | `npm run devanagari:verify` | serve the shaping verification page on :4321 |
+| `npm run images` | resize `assets/photos/` into `public/img/` (see below) |
+| `npm run shoot` | screenshot the celebration at 390px portrait |
 | `npm run typecheck` | `tsc --noEmit` |
 
 ---
 
 ## Where the copy lives
 
-**`lib/content.ts` is the only file with words in it.** Names, dates, venues,
-events, RSVP, travel. Everything currently marked `«PLACEHOLDER»` is invented and
-must be replaced. A badge is shown on the page while `USING_PLACEHOLDERS` is
-`true`; flip it to `false` once the real copy is in.
+**`lib/content.ts` is the only file with words in it.** Names, dates, venues, the
+seven functions, the blessings, the story, RSVP, travel, the hashtag. Everything
+currently marked `«PLACEHOLDER»` is invented and must be replaced. A badge is
+shown on the page while `USING_PLACEHOLDERS` is `true`; flip it to `false` once
+the real copy is in.
 
 Devanagari strings live in **`content/devanagari.json`** instead, because they are
 shaped into outlines at build time rather than rendered with a webfont. **If you
@@ -107,6 +119,87 @@ black, so any divergence is visible as well as measurable.
 
 ---
 
+## उत्सव — the celebration
+
+The second half is the seven functions, each full bleed in its own colour.
+North Indian functions are already colour-coded by the families that hold them,
+so the palettes are not a mood board — they are the same kind of table the
+film's `LOOK` is, and they live next to each other in `app/globals.css` keyed on
+`[data-fn]`, because a colour is only ever chosen against its neighbours.
+
+| | | |
+|---|---|---|
+| **तिलक** | saffron, sandalwood, white | the first colour, kept quiet |
+| **मेहंदी** | deep henna green, mirror | the only cool ground |
+| **हल्दी** | turmeric | the loudest panel on the site |
+| **संगीत** | jewel tones on night | the only dark panel |
+| **बारात** | marigold and red | full daylight |
+| **विवाह** | red and gold | **the film's palette returns** |
+| **विदाई** | dawn, drained | the exhale |
+
+विवाह reaching back into the film's gold is the reason this works: colour
+arrives, peaks at हल्दी, and hands one note back to where it came from.
+
+### The handoff
+
+The gatefold card is the hinge. One scrub in `Film.tsx` drives both halves of it:
+`film.stage` falls 1 → 0 and `--utsav-in` rises 0 → 1, deliberately offset rather
+than crossfaded, so there is a beat of near-black between them and the
+celebration lands *out* of the dark rather than through it.
+
+Going dark is not cosmetic. `#stage` is `position: fixed` and mounted forever, so
+without this it keeps rendering a full post chain underneath a photo-heavy
+scroll it is no longer contributing anything to. Three things happen at the
+threshold, and the third is the one that matters:
+
+1. the canvas fades and is then `visibility: hidden`
+2. every act's `on` is blanked, so they go invisible and return early
+3. **every composer pass is disabled**, which makes `composer.render()` an empty
+   loop — zero draw calls, zero fragment work
+
+Only (3) is a real saving. Bloom is a fullscreen convolution and costs the same
+over an empty scene as over a full one, so hiding the acts saves the geometry and
+none of the expensive part. Nothing here reconfigures the renderer, changes
+`frameloop`, or touches React state — TRAP 14 is about a renderer changed
+mid-flight, by whatever route.
+
+### The frames are generated, not drawn
+
+`lib/ornament.ts` produces both arches from one function, in a 0..1 unit square:
+
+```
+even cusps → a point on the apex  → राजस्थान, the cusped jharokha arch
+odd  cusps → a lobe  on the apex  → अवध, the multifoil
+```
+
+The same string is used as the `objectBoundingBox` clipPath *and* as the stroked
+outline, so the photograph's edge and the gold line around it cannot drift apart.
+At विवाह both arches are drawn in the same box, where the eight cusps and the
+eleven foils cross along both shoulders — गठबंधन, in 2D.
+
+A function with no photograph yet draws its vocabulary's motif and its own name
+instead. That is a designed state, not a hole.
+
+### Photographs
+
+Static export means no `next/image` server, so this is decided at build time and
+committed, exactly like the Devanagari outlines:
+
+```
+assets/photos/<anything>.jpg          originals, never committed
+     │  sharp → AVIF + WebP at 480/768/1080/1440, never upscaled
+     ▼
+public/img/<slug>-<w>.{avif,webp}     committed derivatives
+content/photos.generated.json         real dimensions, and a 20px blur
+```
+
+**This is the single decision that makes the celebration fast or slow.** The real
+dimensions matter as much as the bytes: without them every `<img>` starts at zero
+height and the whole page reflows under the reader's thumb as each photograph
+lands. See `assets/photos/README.md` for what to drop in and what to call it.
+
+---
+
 ## Architecture
 
 > **React renders the scene once. Scroll never touches React state.**
@@ -124,13 +217,22 @@ app/layout.tsx       one fixed <canvas>, mounted once, never unmounted
 components/
   Stage.tsx          <Canvas> + the post chain
   Film.tsx           the whole shot list — every ScrollTrigger, in scene order
+                     …including the handoff into उत्सव
   acts/              one component per act; markup and meshes, no timing
   scene/             camera rig, lighting rig, backdrop, post, shared effects
+  Utsav.tsx          the celebration, in section order
+  utsav/             panels, frames, photographs, gallery, countdown
 lib/
   film.ts            the GSAP ⇄ WebGL bridge, world layout, per-act camera curves
   content.ts         ALL copy
+  ornament.ts        the arches and the garland, generated
+  photos.ts          the image manifest
   debug.ts           the scrub-and-capture harness (?debug only)
 ```
+
+The celebration keeps the same three-way split: `lib/content.ts` says *what*,
+`app/globals.css` says *what colour*, `components/Film.tsx` says *when*. Nothing
+in `components/utsav/` decides any of the three.
 
 Acts stay dumb, so the film can be re-timed without touching a visual and
 re-art-directed without touching a timing.
@@ -157,6 +259,8 @@ Open any page with `?debug` and the film exposes itself:
 ```js
 __film.seek(0.42)              // scrub to exact progress, like a video
 __film.act('agni', 0.5)        // or to a named act
+__film.to(12000)               // anywhere on the page, past the end of the film
+__film.top('[data-fn=haldi]')  // …aimed by selector rather than by pixel
 __film.sample()                // mean colour, peak luma, lit fraction, warmth
 __film.stats()                 // triangles, draw calls, programs, textures
 __film.shot('name', 0.42)      // capture the real drawing buffer to a PNG
@@ -167,6 +271,32 @@ __film.shot('name', 0.42)      // capture the real drawing buffer to a PNG
 ```bash
 node scripts/shots.mjs         # writes scripts/.shots/*.png
 ```
+
+### …and the half that is not WebGL
+
+उत्सव is ordinary DOM, so it needs an ordinary screenshot, at the only viewport
+this is really designed for:
+
+```bash
+npm run build && node scripts/serve.mjs out 4322
+npm run shoot                                    # all thirteen, 390×844
+npm run shoot -- --reduced
+npm run shoot -- --probe="__film.state.stage" u-haldi="[data-fn='haldi']"
+```
+
+It drives Chrome over CDP rather than using `chrome --screenshot`, and the reason
+is the same lesson again: `--screenshot` fires on the load event, which on this
+page is the film's opening — *held black*. Every shot comes back black, and a
+black shot of a page that is supposed to be black looks exactly like a pass. So
+the page is driven instead: wait until `__filmReady`, aim it with the harness,
+wait for the reveals, then capture. It reports console errors and any response
+over 400 while it is in there, because "the production console is clean" is worth
+measuring rather than remembering.
+
+`?at=<selector>` does the same aiming from a plain URL, and it runs
+*synchronously* after `ScrollTrigger.refresh()` — a tab that is not being
+composited never runs a `requestAnimationFrame` callback, so the deferred version
+silently did nothing.
 
 Three things make this work, and all three are easy to get wrong:
 
@@ -207,8 +337,16 @@ machine are not.
   time: they share absolutely-positioned boxes, so revealing them all at once
   stacks seven captions on top of each other.
 
+In the celebration the same rule holds: reduced motion still *presents* every
+block, and the countdown's numerals are `aria-hidden` behind one spoken sentence
+saying when the wedding is — a live region ticking once a second is unusable, and
+the numerals are only decorating information that can be stated once.
+
 Sound never starts on its own. The control is rendered in the first paint, and the
-gesture that unlocks audio *is* the bell strike.
+gesture that unlocks audio *is* the bell strike. It also *stops* on its own: the
+drone is the one thing that never runs out, so the handoff rides a second gain
+node downstream of the mute — the listener's intent and the film's presence are
+separate decisions and must not overwrite each other.
 
 ---
 

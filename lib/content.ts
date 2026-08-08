@@ -162,88 +162,274 @@ export const invitation = {
   muhuratLine: 'The auspicious hour falls at 7:42 in the evening', // «PLACEHOLDER»
 }
 
-export interface EventEntry {
-  key: string
+/* ─────────────────────────────────────────────────────── the celebration ───── */
+
+/**
+ * The seven functions.
+ *
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║  THIS LIST IS INVENTED. Replace it with the functions that are actually   ║
+ * ║  happening — add मायरा / भात, सेहरा बंदी, a reception; delete whatever    ║
+ * ║  this family does not hold. Deleting an entry deletes its panel, and the  ║
+ * ║  order here is the order they appear in.                                  ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
+ *
+ * `side` is not decoration either: it decides which regional vocabulary frames
+ * the panel — the groom's राजस्थान cusped arch or the bride's अवध multifoil —
+ * against REGION_OF above. It is the same argument the film makes in gold, so
+ * it has to be *true*, not alternated for rhythm.
+ *
+ * हल्दी is marked as the bride's although it is held at both houses; it is the
+ * bride's haldi that gets photographed. विवाह is the only `both`, and it is the
+ * only panel where the two arches interlock — which is गठबंधन, in 2D.
+ *
+ * `palette` is not here. Each panel's colour lives in app/globals.css keyed on
+ * `[data-fn="…"]`, next to the other six, because a palette is only ever chosen
+ * against its neighbours.
+ */
+export type FunctionKey =
+  | 'tilak'
+  | 'mehndi'
+  | 'haldi'
+  | 'sangeet'
+  | 'baraat'
+  | 'vivah'
+  | 'vidaai'
+
+export interface Celebration {
+  key: FunctionKey
   name: string
-  devanagariKey?: string
+  /** a key in content/devanagari.json — re-run `npm run devanagari` if you add one */
+  devanagariKey: string
+  side: 'bride' | 'groom' | 'both'
   date: string
   time: string
   venue: string
   address: string
-  note?: string
+  /** Google Maps: share → copy link. Omitted means the panel shows no map link. */
+  map?: string
   dress?: string
+  note?: string
+  /** one line of what actually happens, for a guest who has never been to one */
+  line: string
+  /**
+   * The photograph's slug in assets/photos — `haldi.jpg` becomes `haldi`.
+   * A function with no photograph yet draws its ornament instead, which is a
+   * designed state rather than a hole.
+   */
+  photo: string
 }
 
-export const events: EventEntry[] = [
+export const celebrations: Celebration[] = [
+  {
+    key: 'tilak',
+    name: 'Tilak', // «PLACEHOLDER» — every entry in this array is invented
+    devanagariKey: 'tilak',
+    side: 'groom',
+    date: 'Tuesday, 9 February 2027',
+    time: '11:00 am',
+    venue: 'Placeholder House',
+    address: 'Chandpole, Udaipur, Rajasthan 313001',
+    map: '',
+    dress: 'Saffron and white',
+    line: 'The bride’s family marks the groom’s forehead, and the two households are formally joined.',
+    photo: 'tilak',
+  },
   {
     key: 'mehndi',
-    name: 'Mehndi', // «PLACEHOLDER» — all six entries below are placeholders
+    name: 'Mehndi',
+    devanagariKey: 'mehndi',
+    side: 'bride',
     date: 'Wednesday, 10 February 2027',
     time: '4:00 pm onwards',
     venue: 'The Courtyard, Placeholder Palace',
     address: 'Lake Road, Udaipur, Rajasthan 313001',
+    map: '',
     dress: 'Garden florals',
+    line: 'Henna, drawn on the bride’s hands and feet, and on anyone else who sits still long enough.',
+    photo: 'mehndi',
   },
   {
     key: 'haldi',
     name: 'Haldi',
+    devanagariKey: 'haldi',
+    side: 'bride',
     date: 'Thursday, 11 February 2027',
     time: '11:00 am',
     venue: 'The Lawns, Placeholder Palace',
     address: 'Lake Road, Udaipur, Rajasthan 313001',
+    map: '',
     dress: 'Yellow, and clothes you do not love',
+    line: 'Turmeric, on both of them, at both houses. Nobody leaves clean.',
+    photo: 'haldi',
   },
   {
     key: 'sangeet',
     name: 'Sangeet',
+    devanagariKey: 'sangeet',
+    side: 'groom',
     date: 'Thursday, 11 February 2027',
     time: '8:00 pm',
     venue: 'Durbar Hall, Placeholder Palace',
     address: 'Lake Road, Udaipur, Rajasthan 313001',
+    map: '',
     dress: 'Indian formal',
+    line: 'Both families, one stage, and a running order nobody will keep to.',
+    photo: 'sangeet',
   },
   {
     key: 'baraat',
     name: 'Baraat',
+    devanagariKey: 'baraat',
+    side: 'groom',
     date: 'Friday, 12 February 2027',
     time: '5:30 pm',
     venue: 'Assembling at the East Gate',
     address: 'Lake Road, Udaipur, Rajasthan 313001',
+    map: '',
     note: 'Please arrive by 5:00 pm — the procession will not wait.',
+    line: 'The groom’s procession, on the move, loudly, the whole way.',
+    photo: 'baraat',
   },
   {
     key: 'vivah',
     name: 'Vivah',
     devanagariKey: 'vivah',
+    side: 'both',
     date: 'Friday, 12 February 2027',
     time: '7:42 pm, the muhurat',
     venue: 'The Mandap, Water Garden',
     address: 'Lake Road, Udaipur, Rajasthan 313001',
+    map: '',
     dress: 'Indian traditional',
+    line: 'The fire, the seven steps, and the knot. Everything else is around this.',
+    photo: 'vivah',
   },
   {
-    key: 'reception',
-    name: 'Reception',
+    key: 'vidaai',
+    name: 'Vidaai',
+    devanagariKey: 'vidaai',
+    side: 'bride',
     date: 'Saturday, 13 February 2027',
-    time: '7:00 pm',
-    venue: 'The Terrace, Placeholder Palace',
+    time: 'At first light',
+    venue: 'The North Court',
     address: 'Lake Road, Udaipur, Rajasthan 313001',
-    dress: 'Black tie or Indian formal',
+    line: 'The bride leaves her parents’ house. It is the quietest hour of the week.',
+    photo: 'vidaai',
   },
 ]
+
+/**
+ * The muhurat, as a real instant.
+ *
+ * The countdown is arithmetic, so this has to be a machine-readable date with an
+ * explicit offset — `+05:30`, always, even though the wedding is in India and so
+ * is most of the guest list. Without the offset the string is parsed in the
+ * *reader's* timezone, and a cousin opening this in Dubai or Toronto is shown a
+ * countdown to the wrong moment with total confidence.
+ */
+export const muhurat = {
+  iso: '2027-02-12T19:42:00+05:30', // «PLACEHOLDER»
+  label: 'until the muhurat',
+  /** Read aloud instead of the ticking numerals, which no screen reader wants. */
+  spoken: 'The muhurat falls at 7:42 in the evening on Friday, 12 February 2027.', // «PLACEHOLDER»
+  passed: 'The muhurat has passed. Thank you for being there.',
+}
+
+/* ──────────────────────────────────────────────────────── the households ───── */
+
+/**
+ * Blessings. Grandparents first, then parents, both sides.
+ *
+ * Get the honorifics and the spellings from the families themselves and paste
+ * them in exactly. This is the single most-read paragraph on any Indian wedding
+ * invitation and the one place where being approximately right is worse than
+ * being absent.
+ */
+export const blessings = {
+  eyebrow: 'With the blessings of',
+  devanagariKey: 'aashirvad',
+  sides: [
+    {
+      household: 'The bride’s family', // «PLACEHOLDER» — all of it
+      grandparents: ['Late Shri Placeholder Sharma & Smt. Placeholder Sharma'],
+      parents: 'Shri Placeholder Sharma & Smt. Placeholder Sharma',
+    },
+    {
+      household: 'The groom’s family',
+      grandparents: ['Shri Placeholder Verma & Late Smt. Placeholder Verma'],
+      parents: 'Shri Placeholder Verma & Smt. Placeholder Verma',
+    },
+  ],
+}
+
+/* ───────────────────────────────────────────────────────────── the story ───── */
+
+export const story = {
+  eyebrow: 'Our story',
+  /** Paragraphs. Rough notes are fine — they get drafted, then corrected. */
+  paragraphs: [
+    'We met in a way that seemed unremarkable at the time and does not seem unremarkable now. «PLACEHOLDER»', // «PLACEHOLDER»
+    'What followed took several years, two cities and a great deal of patience from both families. «PLACEHOLDER»',
+    'We would like you there for the part that comes next. «PLACEHOLDER»',
+  ],
+}
+
+export const portraits = {
+  eyebrow: 'Meet the two of them',
+  bride: {
+    heading: 'The bride',
+    bio: 'A paragraph about Niharika, in her own words rather than her family’s. «PLACEHOLDER»', // «PLACEHOLDER»
+    photo: 'bride',
+  },
+  groom: {
+    heading: 'The groom',
+    bio: 'A paragraph about Mahipal, same. «PLACEHOLDER»', // «PLACEHOLDER»
+    photo: 'groom',
+  },
+}
+
+export const gallery = {
+  eyebrow: 'The years before this',
+  /** Everything named gallery-* in assets/photos, in filename order. */
+  empty: 'Photographs go in assets/photos as gallery-01, gallery-02, and so on.',
+}
+
+/* ─────────────────────────────────────────────────────────────── replies ───── */
 
 export const rsvp = {
   headline: 'Kindly respond',
   line: 'We would be grateful to know by the fifteenth of January.', // «PLACEHOLDER»
   /**
-   * Static export — there is no server. Point this at a Google Form, a Typeform,
-   * a mailto:, or anything else that lives outside this build.
+   * Static export — there is no server, so the reply has to leave the site
+   * entirely. WhatsApp is not a fallback here, it is the *right* channel: this
+   * invitation reaches people by being forwarded in a family group, and asking
+   * someone to fill in a web form when they are already in the app that
+   * delivered it is friction for its own sake.
+   *
+   * Country code, no `+`, no spaces. wa.me rejects anything else.
    */
-  href: 'https://example.com/rsvp', // «PLACEHOLDER»
-  cta: 'RSVP',
+  whatsapp: '910000000000', // «PLACEHOLDER»
+  /** Pre-filled, so the reply arrives already legible. */
+  message: 'Namaste! This is —, and we will be coming to the wedding.',
+  cta: 'RSVP on WhatsApp',
   contacts: [
     { name: 'Placeholder Sharma', role: 'for the bride', tel: '+91 00000 00000' }, // «PLACEHOLDER»
     { name: 'Placeholder Verma', role: 'for the groom', tel: '+91 00000 00000' }, // «PLACEHOLDER»
+  ],
+}
+
+/** The wa.me deep link. Opens the app on a phone and web on a desktop. */
+export function whatsappHref(): string {
+  return `https://wa.me/${rsvp.whatsapp}?text=${encodeURIComponent(rsvp.message)}`
+}
+
+export const social = {
+  hashtag: '#PlaceholderWedsPlaceholder', // «PLACEHOLDER»
+  line: 'Tag anything you take. We would rather have your photographs than the ones we paid for.',
+  handles: [
+    { label: 'Niharika', handle: 'placeholder' }, // «PLACEHOLDER»
+    { label: 'Mahipal', handle: 'placeholder' }, // «PLACEHOLDER»
   ],
 }
 

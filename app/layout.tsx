@@ -78,6 +78,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="antialiased">
         {/* The one canvas. Mounted here, once, and never unmounted. */}
         <StageMount />
+        {/* The ground उत्सव is laid on, between the canvas and the document.
+            Invisible until the gatefold card opens into it — see the handoff
+            in components/Film.tsx. */}
+        <div id="utsav-ground" aria-hidden="true" />
         {children}
       </body>
     </html>

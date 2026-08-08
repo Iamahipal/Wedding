@@ -192,6 +192,22 @@ export interface FilmState {
   curtain: number
   curtainColor: string
 
+  /**
+   * The handoff. 1 while the film owns the screen, 0 once उत्सव does.
+   *
+   * The canvas is `position: fixed` and mounted forever, so without this it
+   * keeps rendering a full post chain underneath a photo-heavy scroll it is no
+   * longer contributing anything to. On the mid-range Android this is built for
+   * that is the difference between a celebration that scrolls and one that
+   * stutters — and bloom costs the same whether the scene in front of it has
+   * 23,000 triangles or none, so hiding the acts alone would not have done it.
+   *
+   * Written by the handoff ScrollTrigger in Film.tsx, read by FrameDriver (the
+   * opacity), by every act (via `on`, which setStage blanks), and by Post (which
+   * disables every composer pass, making composer.render a no-op loop).
+   */
+  stage: number
+
   look: Look
   /** the damped values the renderer actually uses */
   damped: Look
@@ -241,6 +257,7 @@ export const film: FilmState = {
 
   curtain: 0,
   curtainColor: '#000000',
+  stage: 1,
 
   look: { ...LOOK.shunya },
   damped: { ...LOOK.shunya },
@@ -264,6 +281,41 @@ export const film: FilmState = {
 
 export function emitBeat(name: string) {
   if (film.beats.length < 16) film.beats.push(name)
+}
+
+/* ────────────────────────────────────────────────────────── the handoff ───── */
+
+/** Below this the stage is dark: nothing ticks, nothing renders. */
+export const STAGE_OFF = 0.002
+
+/**
+ * The one writer of `film.stage`.
+ *
+ * Crossing the threshold in either direction is a state change, not a per-frame
+ * value, so it is done here once rather than tested every frame in three places.
+ * Going dark blanks `on` — an act whose `on` is 0 sets `visible = false` and
+ * returns early from useFrame, so the whole act list stops costing anything.
+ * Coming back re-derives the same state from the playhead, because the master
+ * ScrollTrigger's range ended long ago and will not fire again on its own.
+ *
+ * `frameloop` is deliberately untouched (TRAP 14): a renderer reconfigured
+ * mid-flight is the hazard, by whatever route.
+ */
+export function setStage(v: number) {
+  const next = clamp01(v)
+  if (next === film.stage) return
+
+  const wasLive = film.stage > STAGE_OFF
+  const live = next > STAGE_OFF
+  film.stage = next
+  if (live === wasLive) return
+
+  if (live) {
+    updateFilm(film.t)
+  } else {
+    for (const act of ACT_ORDER) film.on[act] = 0
+    film.curtain = 0
+  }
 }
 
 /* ───────────────────────────────────────────── written by ScrollTrigger ───── */

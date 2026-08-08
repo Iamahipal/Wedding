@@ -12,6 +12,12 @@ export const domRefs: {
   curtain: HTMLDivElement | null
   hud: HTMLDivElement | null
   /**
+   * The canvas wrapper. Faded out — and then hidden outright — as the film
+   * hands the screen over to उत्सव, from inside the render loop for the same
+   * reason as the curtain: it is part of the film, and one clock is one frame.
+   */
+  stage: HTMLDivElement | null
+  /**
    * Every caption block, with the act it belongs to.
    *
    * Captions are faded by scrubbed GSAP timelines, and a scrub is *smoothed* —
@@ -34,6 +40,7 @@ export const domRefs: {
 } = {
   curtain: null,
   hud: null,
+  stage: null,
   captions: [],
   steps: [],
 }

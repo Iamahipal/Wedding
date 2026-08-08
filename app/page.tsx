@@ -4,6 +4,7 @@ import FilmChoreography from '@/components/Film'
 import Invitation from '@/components/Invitation'
 import Overlay from '@/components/Overlay'
 import SoundToggle from '@/components/SoundToggle'
+import Utsav from '@/components/Utsav'
 import { ACT_LENGTH_VH, ACT_ORDER } from '@/lib/film'
 
 /**
@@ -33,6 +34,8 @@ export default function Page() {
         </div>
 
         <Invitation />
+        {/* The card's doors open into this — see the handoff in Film.tsx. */}
+        <Utsav />
       </main>
     </>
   )

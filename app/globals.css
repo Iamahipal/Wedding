@@ -435,6 +435,16 @@ html[data-chrome='ready'] button.chrome {
   pointer-events: auto;
 }
 
+/* The chrome belongs to the film and leaves with it. The sound control is
+   there so a page that can make noise says so before it does — and once the
+   celebration owns the screen the film has stopped making any, so a floating
+   black pill over a marigold panel is offering to turn off silence. The 1200ms
+   transition on `.chrome` above carries the fade; this only ends it. */
+html[data-film-over] .chrome {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* The curtain that covers every act boundary. Written to directly each frame
    from inside the render loop — never through React state. */
 #curtain {
@@ -453,6 +463,11 @@ html[data-chrome='ready'] button.chrome {
   pointer-events: none;
   display: grid;
   place-items: center;
+  /* The captions belong to the film, so they leave with it. Every act's block
+     has already faded itself out by the end of its act, but this layer is
+     `fixed` and outlives all of them — one stuck caption would sit over the
+     whole celebration, so the handoff takes the layer itself. */
+  opacity: calc(1 - var(--utsav-in, 0));
 }
 
 /* small caps-ish label used for romanised names and UI */
@@ -473,6 +488,854 @@ html[data-chrome='ready'] button.chrome {
     color-mix(in oklab, var(--color-gold-400) 70%, transparent),
     transparent
   );
+}
+
+/* ─────────────────────────────────────────── उत्सव — the celebration ───────
+   The film is the five elements. The celebration is the days.
+
+   Colour here is not a mood board. North Indian functions are already
+   colour-coded by the families that hold them, so each panel wears the palette
+   its function actually wears — the same discipline the film's `LOOK` table
+   has, in one place, tunable without opening a component.
+
+        तिलक     saffron, sandalwood, white     the first colour, kept quiet
+        मेहंदी    deep henna green, mirror       the only cool ground
+        हल्दी     turmeric                        the loudest panel on the site
+        संगीत    jewel tones on night            the only dark panel
+        बारात    marigold and red                full daylight
+        विवाह    red and gold                    the film's palette returns
+        विदाई    dawn, drained                   the exhale
+
+   विवाह reaching back into the film's gold is the reason this works: colour
+   arrives, peaks at हल्दी, and then hands one note back to where it came from.
+   The two halves rhyme rather than merely following one another.
+
+   No new typeface. The celebration is set in the same Cormorant the film is,
+   because it is the same invitation — the difference between the halves is
+   supposed to be colour and pace, not a second designer's taste.
+   ------------------------------------------------------------------------- */
+
+/* Written from the handoff ScrollTrigger in Film.tsx. Registered so `calc()`
+   reads it as a number rather than substituting a string, and so anything that
+   ever wants to transition it can. */
+@property --utsav-in {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+/* The ground the celebration is laid on — sandalwood, with the light coming in
+   from above. Fixed, so it is one composited layer that never repaints while
+   the page scrolls; every function panel paints its own colour over it. */
+#utsav-ground {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: var(--utsav-in);
+  /* Nearly flat, with only a breath of warmth at the top. The layer is fixed,
+     so any strong gradient in it stays welded to the viewport and reads as a
+     light leak on somebody's screen rather than as light in a room. */
+  background:
+    radial-gradient(130% 52% at 50% -8%, #fbdfa8 0%, rgba(251, 223, 168, 0) 72%),
+    #f3e3c6;
+}
+
+/* ── the seven palettes ──────────────────────────────────────────────────
+   Four properties each, always the same four, always stated outright rather
+   than derived from one another: a panel's colour is a decision, and a
+   colour-mix chain hides the decision inside three other decisions.
+
+     --ground    the full-bleed field
+     --ink       body text on it
+     --accent    the foil: rules, numerals, the frame's line
+     --ornament  the textile behind everything, at low contrast
+   -------------------------------------------------------------------------- */
+[data-fn] {
+  --ground: #f6ecd9;
+  --ink: #4a2a0a;
+  --accent: #c9871f;
+  --ornament: #e6d3ae;
+}
+[data-fn='tilak'] {
+  --ground: #f7eeda;
+  --ink: #6a3406;
+  --accent: #de7317;
+  --ornament: #ecd8b4;
+}
+/* The mirror in शीशा work is actual mirror, so the accent is cold — the only
+   cold note anywhere in either half. The ornament stays warm underneath it so
+   the panel does not tip into being a green website. */
+[data-fn='mehndi'] {
+  --ground: #10301f;
+  --ink: #ece0c0;
+  --accent: #dbe6df;
+  --ornament: #1b4630;
+}
+/* The loudest thing on the site, deliberately. Turmeric is not a pastel and
+   pretending otherwise would be the one dishonest panel in the set. */
+[data-fn='haldi'] {
+  --ground: #f0b214;
+  --ink: #4a2905;
+  --accent: #fff4cb;
+  --ornament: #e4a00c;
+}
+[data-fn='sangeet'] {
+  --ground: #150f2b;
+  --ink: #f2e2bf;
+  --accent: #ffbf5e;
+  --ornament: #2a1c46;
+}
+[data-fn='baraat'] {
+  --ground: #ef7215;
+  --ink: #55090c;
+  --accent: #ffe3ac;
+  --ornament: #d95c0d;
+}
+/* Here the film comes back. These are the same tokens the gold is cut from. */
+[data-fn='vivah'] {
+  --ground: #560c17;
+  --ink: var(--color-gold-100);
+  --accent: var(--color-gold-300);
+  --ornament: #6d1420;
+}
+[data-fn='vidaai'] {
+  --ground: #e9e0d6;
+  --ink: #4d4137;
+  --accent: #b5897a;
+  --ornament: #dbd0c3;
+}
+
+/* ── layout ──────────────────────────────────────────────────────────────── */
+
+[data-utsav] {
+  position: relative;
+  z-index: 10;
+  /* Read on a phone held in one hand. Every measure below is set for that and
+     merely allowed to get roomier, never re-designed at a breakpoint. */
+  --measure: 34rem;
+  /* The sandalwood default, for every section that does not own a function's
+     colour. A panel's `[data-fn]` block overrides all four. */
+  --ground: #f6ecd9;
+  --ink: #43290c;
+  --accent: #b4761b;
+  --ornament: #e3d0aa;
+  color: var(--ink);
+}
+
+.utsav-panel {
+  position: relative;
+  background-color: var(--ground);
+  color: var(--ink);
+  padding: clamp(3.5rem, 11vh, 6rem) 1.25rem clamp(3.5rem, 11vh, 6rem);
+  overflow: hidden;
+}
+
+/* A section that sits on the sandalwood ground rather than owning a colour. */
+.utsav-section {
+  position: relative;
+  padding: clamp(3.5rem, 11vh, 6rem) 1.25rem;
+}
+
+.utsav-inner {
+  position: relative;
+  margin: 0 auto;
+  max-width: var(--measure);
+  text-align: center;
+}
+
+/* ── type on colour ──────────────────────────────────────────────────────── */
+
+.u-eyebrow {
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  font-size: clamp(0.55rem, 1.6vw, 0.68rem);
+  font-weight: 600;
+  color: color-mix(in oklab, currentColor 62%, transparent);
+}
+
+.u-display {
+  font-weight: 300;
+  line-height: 1.06;
+  letter-spacing: 0.01em;
+  font-size: clamp(2.1rem, 8vw, 3.4rem);
+}
+
+.u-lede {
+  font-weight: 300;
+  line-height: 1.65;
+  font-size: clamp(1rem, 2.6vw, 1.15rem);
+  color: color-mix(in oklab, currentColor 82%, transparent);
+}
+
+.u-rule {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in oklab, var(--accent, currentColor) 85%, transparent),
+    transparent
+  );
+}
+
+/* ── the one button shape in the celebration ─────────────────────────────────
+   Gold foil on the panel's own colour. Not a gradient pill: the references all
+   use the same 45° rainbow, which is a Framer default, and next to this film's
+   gold it reads as a template rather than as a card.
+   -------------------------------------------------------------------------- */
+.u-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.6rem;
+  font-family: var(--font-ui);
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  border: 1px solid color-mix(in oklab, var(--accent) 55%, transparent);
+  border-radius: 1px;
+  background: color-mix(in oklab, var(--accent) 8%, transparent);
+  transition:
+    background-color 400ms cubic-bezier(0.16, 0.84, 0.28, 1),
+    border-color 400ms cubic-bezier(0.16, 0.84, 0.28, 1),
+    color 400ms cubic-bezier(0.16, 0.84, 0.28, 1);
+}
+.u-link:hover {
+  color: var(--ground);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.u-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* ── the frames ──────────────────────────────────────────────────────────────
+   Sized to nothing, never `display: none`. A display:none subtree is not laid
+   out, and several engines then refuse to resolve a `clip-path: url(#…)` that
+   points into it — the photograph simply arrives unclipped on some browsers.
+   -------------------------------------------------------------------------- */
+.u-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.u-frame {
+  position: relative;
+  width: 100%;
+  max-width: 21rem;
+  margin: 0 auto;
+  /* Portrait, because this is read on a phone held in one hand and a landscape
+     photograph in a portrait panel wastes two thirds of the screen. */
+  aspect-ratio: var(--frame-ar, 3 / 4);
+}
+
+.u-frame__plate {
+  position: absolute;
+  inset: 0;
+  background-color: var(--ornament);
+}
+
+.u-picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.u-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* the 20px blur placeholder from the manifest, painted until the real bytes
+     land on top of it. Nothing to clean up: the image covers it. */
+  background-size: cover;
+  background-position: center;
+}
+
+/* `overflow: visible` because non-scaling-stroke centres the line on the path,
+   and the path runs along the edges of its own viewBox — half of every stroke
+   is outside the box by definition. */
+.u-frame__line {
+  position: absolute;
+  inset: 0;
+  /* Both, explicitly. An <svg> is a *replaced* element, so `inset: 0` alone
+     does not stretch it: with `height: auto` it takes its intrinsic height from
+     the viewBox's 1:1 ratio, `bottom` is dropped as over-constrained, and the
+     arch is drawn square inside a portrait frame while the clipped photograph
+     underneath fills the whole box. It looks like a clipping bug and is not. */
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.u-frame__line path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+}
+/* the second, quieter line outside the arch — the moulding, not the opening */
+.u-frame__line--out {
+  inset: -0.6rem;
+}
+.u-frame__line--out path {
+  stroke-width: 1;
+  stroke-opacity: 0.5;
+}
+/* विवाह only: the other household's arch, in the same box so the two profiles
+   actually cross. Inset, it would be a second border. */
+.u-frame__line--in path {
+  stroke-width: 1.2;
+  stroke-opacity: 0.72;
+}
+
+/* what an arch holds before there is a photograph to put in it */
+.u-plate {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.u-plate__fill {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.u-plate__name {
+  position: relative;
+  color: color-mix(in oklab, var(--accent) 76%, var(--ground));
+}
+
+.u-garland {
+  display: block;
+  width: 100%;
+  max-width: 30rem;
+  height: auto;
+  margin: 0 auto;
+}
+
+/* ── inside a function panel ─────────────────────────────────────────────── */
+
+.u-index {
+  letter-spacing: 0.24em;
+}
+
+.u-fn-name {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.1rem;
+  color: var(--accent);
+}
+
+.u-fn-roman {
+  margin-top: 0.9rem;
+  font-weight: 300;
+  font-size: clamp(1.5rem, 5.5vw, 2rem);
+  letter-spacing: 0.02em;
+}
+
+.u-fn-line {
+  margin: 0.85rem auto 0;
+  max-width: 26rem;
+  font-weight: 300;
+  line-height: 1.6;
+  font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+  color: color-mix(in oklab, currentColor 76%, transparent);
+}
+
+.u-fn-frame {
+  margin-top: clamp(2rem, 6vh, 3rem);
+}
+
+/* ── when, where, wear ───────────────────────────────────────────────────────
+   A definition list, and it is one in the markup as well as in the look. Three
+   labelled facts read aloud in order is exactly what a screen reader should get
+   here, and it is what a `<dl>` gives for free.
+   -------------------------------------------------------------------------- */
+.u-facts {
+  margin: clamp(2rem, 6vh, 2.75rem) auto 0;
+  max-width: 24rem;
+  text-align: left;
+  display: grid;
+  gap: 1.15rem;
+}
+.u-facts > div {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  gap: 0.9rem;
+  align-items: baseline;
+  padding-top: 1.15rem;
+  border-top: 1px solid color-mix(in oklab, var(--accent) 28%, transparent);
+}
+.u-facts > div:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.u-facts dt {
+  font-family: var(--font-ui);
+  font-size: 0.58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+}
+.u-facts dd {
+  margin: 0;
+  font-weight: 300;
+  line-height: 1.45;
+  font-size: clamp(0.95rem, 2.4vw, 1.02rem);
+}
+.u-facts__second {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.85em;
+  color: color-mix(in oklab, currentColor 62%, transparent);
+}
+
+.u-note {
+  margin: 1.5rem auto 0;
+  max-width: 24rem;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: color-mix(in oklab, currentColor 72%, transparent);
+}
+
+.u-cta {
+  margin-top: clamp(1.75rem, 5vh, 2.5rem);
+}
+
+/* The garland hangs between one panel and the next, on the sandalwood ground.
+   Seven saturated fields laid edge to edge is seven fields nobody can look at;
+   the strip between them is what lets each one be as loud as it should be. */
+.u-divider {
+  position: relative;
+  padding: clamp(1.5rem, 5vh, 2.5rem) 1.25rem clamp(0.75rem, 3vh, 1.25rem);
+}
+
+/* ── the textile behind the panel ────────────────────────────────────────────
+   A mask rather than a background image, for the same reason `.folio-mark` is
+   one: the motif is authored once and takes the *panel's* colour from
+   `--ornament`, instead of needing seven encoded copies in seven colours.
+   -------------------------------------------------------------------------- */
+.u-texture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: var(--ornament);
+  -webkit-mask-image: var(--motif);
+  mask-image: var(--motif);
+  -webkit-mask-size: var(--motif-size);
+  mask-size: var(--motif-size);
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
+/* लहरिया and बंधनी — diagonal resist bands, and the tied-off dots between them.
+   The bands wander, because real leheriya is tied on rolled cloth and the
+   resist wanders; a ruled straight stripe reads as printed vinyl. */
+[data-vocab='rajasthan'] {
+  --motif: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cg fill='none' stroke='%23fff' stroke-width='6'%3E%3Cpath d='M0 30 Q15 13 30 0'/%3E%3Cpath d='M0 60 Q30 28 60 0'/%3E%3Cpath d='M30 60 Q45 43 60 30'/%3E%3C/g%3E%3Cg fill='%23fff'%3E%3Ccircle cx='44' cy='16' r='2.6'/%3E%3Ccircle cx='14' cy='46' r='2.6'/%3E%3C/g%3E%3C/svg%3E");
+  --motif-size: 60px 60px;
+}
+
+/* बूटी on its zari lattice — the ground of fine gold thread, and the figure
+   worked on top of it. Two layers, because that is what the weave is. */
+[data-vocab='awadh'] {
+  --motif: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cg fill='none' stroke='%23fff' stroke-width='1.4'%3E%3Cpath d='M0 28 L28 0 M0 56 L56 0 M28 56 L56 28'/%3E%3Cpath d='M0 28 L28 56 M0 0 L56 56 M28 0 L56 28'/%3E%3C/g%3E%3Cpath fill='%23fff' d='M28 14c5 3 7 8 5 13-2 6-8 9-13 8 3-3 4-7 3-11-1-5-2-8 5-10Z'/%3E%3C/svg%3E");
+  --motif-size: 56px 56px;
+}
+
+/* ── the opening: what the doors open onto ───────────────────────────────── */
+
+/* A threshold, not padding.
+   The film has to be *gone* before the first coloured thing is legible — a gold
+   knot still blooming behind ॐ श्री गणेशाय नमः is two pieces at once and reads
+   as neither. This is the room the handoff needs, and the handoff's end is
+   anchored on the invocation below rather than on a guess. */
+.u-open {
+  padding-top: clamp(8rem, 30vh, 14rem);
+}
+.u-invocation {
+  display: flex;
+  justify-content: center;
+  color: color-mix(in oklab, var(--accent) 88%, var(--ink));
+}
+.u-hero {
+  margin: clamp(2.5rem, 8vh, 4rem) auto clamp(2rem, 6vh, 3rem);
+  --frame-ar: 4 / 5;
+}
+.u-hero .u-frame {
+  max-width: 26rem;
+}
+
+.u-weds {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.9rem 1.1rem;
+  color: color-mix(in oklab, var(--accent) 82%, var(--ink));
+}
+.u-weds__and {
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  color: color-mix(in oklab, var(--ink) 55%, transparent);
+}
+.u-open__names {
+  margin-top: 1.4rem;
+}
+.u-amp {
+  font-size: 0.5em;
+  color: var(--accent);
+}
+.u-open__date {
+  margin-top: 1.5rem;
+}
+
+/* ── आशीर्वाद ─────────────────────────────────────────────────────────────── */
+
+.u-aashirvad {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+  color: var(--accent);
+}
+.u-households {
+  display: grid;
+  gap: clamp(2rem, 7vh, 3rem);
+  margin-top: clamp(2.5rem, 8vh, 3.5rem);
+}
+@media (min-width: 40rem) {
+  .u-households {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.u-elder {
+  margin-top: 0.9rem;
+  font-weight: 300;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: color-mix(in oklab, currentColor 62%, transparent);
+}
+.u-parents {
+  margin-top: 0.55rem;
+  font-weight: 300;
+  font-size: clamp(1.02rem, 2.6vw, 1.14rem);
+  line-height: 1.5;
+}
+
+/* ── running text ────────────────────────────────────────────────────────── */
+
+.u-prose {
+  max-width: 30rem;
+}
+.u-wide {
+  max-width: 46rem;
+}
+.u-para {
+  margin-top: 1.25rem;
+  font-weight: 300;
+  line-height: 1.75;
+  font-size: clamp(0.98rem, 2.5vw, 1.08rem);
+  color: color-mix(in oklab, currentColor 84%, transparent);
+}
+.u-prose .u-para {
+  text-align: left;
+}
+.u-prose .u-para:first-of-type {
+  margin-top: 2rem;
+}
+
+.u-pair,
+.u-trio {
+  display: grid;
+  gap: clamp(2.5rem, 8vh, 3.5rem);
+  margin-top: clamp(2.5rem, 8vh, 3.5rem);
+  text-align: left;
+}
+@media (min-width: 40rem) {
+  .u-pair {
+    grid-template-columns: 1fr 1fr;
+  }
+  .u-trio {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.u-portrait {
+  text-align: center;
+}
+.u-portrait .u-frame {
+  max-width: 16rem;
+}
+.u-portrait__name {
+  margin-top: 1.5rem;
+  font-weight: 300;
+  font-size: clamp(1.35rem, 4.5vw, 1.7rem);
+}
+.u-portrait .u-eyebrow {
+  display: block;
+  margin-top: 0.5rem;
+}
+.u-trio__title {
+  font-weight: 300;
+  font-size: 1.15rem;
+  color: color-mix(in oklab, var(--accent) 88%, var(--ink));
+}
+
+/* ── the reply ───────────────────────────────────────────────────────────── */
+
+.u-rsvp__line {
+  margin: 1.4rem auto 0;
+  max-width: 26rem;
+}
+.u-contacts {
+  margin-top: clamp(2.5rem, 7vh, 3.25rem);
+  display: grid;
+  gap: 0.7rem;
+  font-weight: 300;
+  font-size: 0.92rem;
+  color: color-mix(in oklab, currentColor 70%, transparent);
+}
+.u-contacts__name {
+  color: currentColor;
+}
+.u-contacts a:hover {
+  color: var(--accent);
+}
+.u-dot {
+  margin: 0 0.55rem;
+  color: color-mix(in oklab, var(--accent) 70%, transparent);
+}
+
+/* ── DD : HH : MM : SS ───────────────────────────────────────────────────────
+   Tabular figures, because a proportional 1 is narrower than a proportional 8
+   and the whole row jitters sideways once a second otherwise. It is the single
+   most distracting thing a countdown can do.
+   -------------------------------------------------------------------------- */
+.u-count {
+  margin-top: clamp(1.5rem, 5vh, 2.25rem);
+}
+.u-count__row {
+  display: flex;
+  justify-content: center;
+  gap: clamp(0.75rem, 4vw, 1.75rem);
+}
+.u-count__cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 3.2rem;
+}
+.u-count__n {
+  font-size: clamp(2rem, 9vw, 3.2rem);
+  font-weight: 300;
+  line-height: 1;
+  /* Lining as well as tabular. Cormorant defaults to old-style figures, where
+     1 is x-height and 8 is ascending — lovely in a date, and a countdown set in
+     them looks like it is bouncing even when the columns are not moving. */
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: 'lnum' 1, 'tnum' 1;
+  color: color-mix(in oklab, var(--accent) 86%, var(--ink));
+}
+.u-count__l {
+  margin-top: 0.6rem;
+  font-family: var(--font-ui);
+  font-size: 0.52rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: color-mix(in oklab, currentColor 50%, transparent);
+}
+.u-count__sep {
+  position: absolute;
+  top: 0;
+  right: clamp(-0.9rem, -2vw, -0.4rem);
+  font-size: clamp(1.4rem, 6vw, 2.2rem);
+  line-height: 1;
+  color: color-mix(in oklab, var(--accent) 45%, transparent);
+}
+.u-count__spoken {
+  /* Read aloud, never drawn. The numerals above are aria-hidden — a live
+     region ticking once a second is unusable, and this sentence is the actual
+     information they are only decorating. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── the hashtag ─────────────────────────────────────────────────────────── */
+
+.u-hashtag {
+  font-weight: 300;
+  font-size: clamp(1.6rem, 7vw, 2.6rem);
+  letter-spacing: 0.01em;
+  color: color-mix(in oklab, var(--accent) 88%, var(--ink));
+}
+.u-handles {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1.75rem;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+}
+.u-handles a:hover {
+  color: var(--accent);
+}
+
+/* ── and back to where it started ────────────────────────────────────────────
+   The page ends on the film's own black and gold. The celebration is the loud
+   middle of this thing, not its last word.
+   -------------------------------------------------------------------------- */
+.u-close {
+  /* A long fall out of the sandalwood rather than a cut. The first stop is the
+     ground's own colour, so the join is invisible and the darkness arrives as
+     something happening rather than as a block of black stuck on the end. */
+  background: linear-gradient(
+    to bottom,
+    #f3e3c6 0%,
+    #6b4a1d 16%,
+    #221607 34%,
+    #120c05 58%,
+    var(--color-void) 100%
+  );
+  --ink: var(--color-gold-100);
+  --accent: var(--color-gold-300);
+  color: var(--ink);
+  padding-top: clamp(8rem, 24vh, 12rem);
+  padding-bottom: clamp(5rem, 14vh, 8rem);
+}
+.u-close__mark {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  color: var(--color-gold-300);
+}
+
+/* ── the gallery ─────────────────────────────────────────────────────────── */
+
+.u-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+  margin-top: clamp(2rem, 6vh, 3rem);
+  list-style: none;
+  padding: 0;
+}
+@media (min-width: 40rem) {
+  .u-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.85rem;
+  }
+}
+.u-grid__cell {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--ornament);
+  border: 1px solid color-mix(in oklab, var(--accent) 30%, transparent);
+}
+.u-grid__cell:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.u-grid__cell picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.u-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 3.5rem 1rem 5.5rem;
+  overscroll-behavior: contain;
+}
+.u-lightbox__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 3, 1, 0.94);
+  cursor: pointer;
+}
+.u-lightbox__figure {
+  position: relative;
+  margin: 0;
+  max-width: min(100%, 60rem);
+  max-height: 100%;
+}
+.u-lightbox__figure img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100dvh - 9rem);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+.u-lightbox__bar {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+}
+.u-lightbox__count {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  color: var(--color-gold-200);
+  font-variant-numeric: tabular-nums;
+}
+.u-lightbox__x {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+.u-round {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--color-gold-400) 55%, transparent);
+  background: rgba(18, 12, 5, 0.7);
+  color: var(--color-gold-200);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.u-round:hover {
+  background: var(--color-gold-800);
+  color: var(--color-gold-50);
+}
+.u-round:focus-visible {
+  outline: 2px solid var(--color-gold-300);
+  outline-offset: 3px;
 }
 
 /* ────────────────────────────────────────────────── reduced motion ─────────

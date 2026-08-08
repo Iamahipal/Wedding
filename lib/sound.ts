@@ -72,6 +72,16 @@ export const PHRASE: ReadonlyArray<readonly [number, number]> = [
 export class Sound {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
+  /**
+   * The film's own presence, downstream of `master`.
+   *
+   * Two gains rather than one, because the two decisions are unrelated and must
+   * not overwrite each other: `master` is the listener's intent — on, off, the
+   * thing the button controls — and this is whether the *film* is still on
+   * screen at all. Riding one node from both places means whichever wrote last
+   * wins, and the drone comes back the moment the other one touches it.
+   */
+  private stage: GainNode | null = null
   private droneGain: GainNode | null = null
   private droneNodes: OscillatorNode[] = []
   private noiseBuffer: AudioBuffer | null = null
@@ -95,9 +105,12 @@ export class Sound {
       const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
       if (!Ctor) return false
       this.ctx = new Ctor()
+      this.stage = this.ctx.createGain()
+      this.stage.gain.value = 1
+      this.stage.connect(this.ctx.destination)
       this.master = this.ctx.createGain()
       this.master.gain.value = 0.0001
-      this.master.connect(this.ctx.destination)
+      this.master.connect(this.stage)
       this.buildNoise()
       this.startDrone()
     }
@@ -110,6 +123,19 @@ export class Sound {
 
     this.bell(1)
     return true
+  }
+
+  /**
+   * How present the film is, 0..1 — driven by the handoff, not by the listener.
+   *
+   * The drone is the one thing here that never stops on its own: `beat()` is
+   * discrete and simply runs out of beats, but a tanpura under a photo gallery
+   * keeps going forever, and the only control offered for it has by then faded
+   * out along with the rest of the film's chrome.
+   */
+  setPresence(v: number) {
+    if (!this.ctx || !this.stage) return
+    this.stage.gain.setTargetAtTime(Math.max(0, Math.min(1, v)), this.ctx.currentTime, 0.25)
   }
 
   mute() {

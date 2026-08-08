@@ -11,10 +11,17 @@ import {
   ToneMapping,
   wrapEffect,
 } from '@react-three/postprocessing'
-import { BlendFunction, ToneMappingMode, type BloomEffect, type ChromaticAberrationEffect, type NoiseEffect } from 'postprocessing'
+import {
+  BlendFunction,
+  ToneMappingMode,
+  type BloomEffect,
+  type ChromaticAberrationEffect,
+  type EffectComposer as EffectComposerImpl,
+  type NoiseEffect,
+} from 'postprocessing'
 import * as THREE from 'three'
 
-import { film } from '@/lib/film'
+import { film, STAGE_OFF } from '@/lib/film'
 import { HeatShimmerEffect } from './effects/HeatShimmer'
 
 const HeatShimmer = wrapEffect(HeatShimmerEffect)
@@ -40,6 +47,7 @@ const HeatShimmer = wrapEffect(HeatShimmerEffect)
  * useFrame. None of it is React state: this component renders exactly once.
  */
 export default function Post() {
+  const composer = useRef<EffectComposerImpl>(null)
   const bloom = useRef<BloomEffect>(null)
   const chroma = useRef<ChromaticAberrationEffect>(null)
   const grain = useRef<NoiseEffect>(null)
@@ -48,6 +56,28 @@ export default function Post() {
   const zero = useMemo(() => new THREE.Vector2(0, 0), [])
 
   useFrame(() => {
+    /* ── the handoff ───────────────────────────────────────────────────────
+     * Once उत्सव owns the screen the film must stop *drawing*, not just stop
+     * being visible: bloom is a fullscreen convolution and costs the same over
+     * an empty scene as over a full one, so hiding the acts saves the geometry
+     * and none of the expensive part.
+     *
+     * A disabled pass is skipped by EffectComposer.render outright, so with all
+     * of them off the render call is an empty loop — zero draw calls, zero
+     * fragment work — while the renderer, the composer and its render targets
+     * are left exactly as they were. That last part is the whole point: TRAP 14
+     * is about reconfiguring a live renderer, and nothing here does.
+     *
+     * This runs at the default priority, so it lands before the composer's own
+     * subscriber at priority 1 and takes effect in the same frame.
+     * ------------------------------------------------------------------- */
+    const c = composer.current
+    if (c) {
+      const live = film.stage >= STAGE_OFF
+      for (const pass of c.passes) if (pass.enabled !== live) pass.enabled = live
+      if (!live) return
+    }
+
     const d = film.damped
 
     if (bloom.current) {
@@ -73,7 +103,12 @@ export default function Post() {
   })
 
   return (
-    <EffectComposer multisampling={0} enableNormalPass={false} frameBufferType={THREE.HalfFloatType}>
+    <EffectComposer
+      ref={composer}
+      multisampling={0}
+      enableNormalPass={false}
+      frameBufferType={THREE.HalfFloatType}
+    >
       <Bloom
         ref={bloom}
         mipmapBlur
