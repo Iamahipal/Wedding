@@ -63,12 +63,27 @@ const reduced = flag('reduced', false) === true
 const origin = flag('origin', process.env.SHOOT_ORIGIN || 'http://localhost:4322')
 const suffix = reduced ? '-reduced' : ''
 
-/** name = selector. Split on the first `=`, because selectors contain them. */
+/**
+ * `name=selector` or `name=selector@offset`.
+ *
+ * Split on the *first* `=`, because selectors contain them, and on the last `@`
+ * for the offset — which exists because the film's acts are one enormous empty
+ * section each, and "the top of [data-act=agni]" is the start of a two-screen
+ * scroll rather than the shot anybody wants to see.
+ */
 const pairs = argv
   .filter((a) => !a.startsWith('--'))
   .map((a) => {
     const i = a.indexOf('=')
-    return i < 0 ? [a, ''] : [a.slice(0, i), a.slice(i + 1)]
+    const name = i < 0 ? a : a.slice(0, i)
+    let selector = i < 0 ? '' : a.slice(i + 1)
+    let offset = 0
+    const at = selector.lastIndexOf('@')
+    if (at > 0) {
+      offset = Number(selector.slice(at + 1)) || 0
+      selector = selector.slice(0, at)
+    }
+    return [name, selector, offset]
   })
 
 const DEFAULT_SHOTS = [
@@ -204,7 +219,7 @@ try {
 
   console.log(`  ${origin}  ${width}×${height}${reduced ? '  reduced motion' : ''}\n`)
 
-  for (const [name, selector] of shots) {
+  for (const [name, selector, offset = 0] of shots) {
     await send('Page.navigate', { url: origin })
 
     // Wait for the choreography to have finished building. `__filmReady` is set
@@ -220,7 +235,7 @@ try {
     const y = selector
       ? await evaluate(
           `(() => { const t = window.__film.top(${JSON.stringify(selector)});
-             return t === null ? null : window.__film.to(t); })()`,
+             return t === null ? null : window.__film.to(t + ${offset}); })()`,
         )
       : 0
     if (selector && y === null) {
